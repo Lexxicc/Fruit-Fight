@@ -6,7 +6,7 @@
     <title>Fruit Fight</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&family=VT323&display=swap');
 
         :root {
             --nav-bg: #002D47;
@@ -14,7 +14,7 @@
             --teal-mid: #65DCB1;
             --teal-light: #76E0B9;
             --win-teal: #54D8A8;
-            --gold: #ffd700; 
+            --gold: #ffd700;
             --sym-size: 80px; /* Reduced from 100px */
             --peek-size: 40px; /* Reduced from 50px */
         }
@@ -52,12 +52,11 @@
         .slot-bezel {
             background: rgba(0, 45, 71, 0.8);
             border: 2px solid var(--teal-primary);
-            border-radius: 30px;
+            border-radius: 20px;
             box-shadow: 0 0 40px rgba(84, 216, 168, 0.15), 0 15px 40px rgba(0, 0, 0, 0.8);
             position: relative;
             backdrop-filter: blur(10px);
-            width: fit-content;
-            max-width: 100%;
+            width: 100%;
             box-sizing: border-box;
         }
 
@@ -80,12 +79,12 @@
             content: "";
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(180deg, 
-                rgba(0,0,0,0.8) 0%, 
-                rgba(0,0,0,0.1) 15%, 
-                rgba(0,0,0,0) 25%, 
-                rgba(0,0,0,0) 75%, 
-                rgba(0,0,0,0.1) 85%, 
+            background: linear-gradient(180deg,
+                rgba(0,0,0,0.8) 0%,
+                rgba(0,0,0,0.1) 15%,
+                rgba(0,0,0,0) 25%,
+                rgba(0,0,0,0) 75%,
+                rgba(0,0,0,0.1) 85%,
                 rgba(0,0,0,0.8) 100%);
             z-index: 10;
             pointer-events: none;
@@ -112,8 +111,8 @@
 
         .reel-strip .symbol:first-child,
         .reel-strip .symbol:last-child {
-            opacity: 0.3;
-            filter: grayscale(0.5) blur(0.5px);
+            opacity: 0.65;
+            filter: grayscale(0.2);
         }
 
         .symbol svg {
@@ -156,7 +155,6 @@
             }
             .reel-window { height: 208px; } /* (52*3) + 26 + 26 */
             .symbol svg { width: 38px; height: 38px; }
-            .slot-bezel { width: 100%; border-radius: 16px; }
             /* Keep touch targets at 44px minimum on mobile */
             .nudge-btn { height: 44px; min-height: 44px; font-size: 0.55rem; }
             .hold-btn { height: 44px; min-height: 44px; font-size: 0.6rem; margin-top: 3px; }
@@ -252,64 +250,229 @@
             border-radius: 20px;
         }
 
-        .header-btn { min-height: 44px; }
         .header-btn--gold { color: var(--gold); border-color: var(--gold); }
 
         /* Reel columns must not overflow their grid cell */
         .reel-col { min-width: 0; overflow: hidden; }
         .reel-container { min-width: 0; width: 100%; }
+
+        /* Game shell — centres the whole UI, max width on desktop */
+        .game-shell {
+            width: 100%;
+            max-width: 640px;
+            padding: 8px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        /* Shared stat text styles */
+        .stat-label { font-size: 0.5rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Orbitron', sans-serif; }
+        .stat-value { font-size: 1rem; font-weight: 700; line-height: 1.2; }
+
+        /* Console row */
+        .console-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 8px 12px;
+            gap: 8px;
+        }
+        .message-text {
+            font-size: 0.75rem;
+            font-weight: 300;
+            color: #99f6e4;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            flex: 1;
+            min-width: 0;
+        }
+        .spin-btn-size { padding: 10px 28px; font-size: 1.25rem; flex-shrink: 0; }
+
+        /* Utility button row */
+        .utility-btn { min-height: 36px; font-size: 0.6rem; padding: 6px 4px; }
+
+        @media (min-width: 480px) {
+            .game-shell { padding: 12px; }
+            .stat-value { font-size: 1.1rem; }
+            .spin-btn-size { padding: 12px 36px; font-size: 1.5rem; }
+            .message-text { font-size: 0.875rem; }
+            .utility-btn { min-height: 40px; font-size: 0.7rem; }
+        }
+
+        /* ─── START MENU ─── derived from game palette */
+        :root {
+            --color-bg-dark:  #001a2d;
+            --color-panel:    #002D47;
+            --color-primary:  #54D8A8;
+            --color-accent:   #65DCB1;
+            --color-glow:     #76E0B9;
+            --color-shadow:   #000c1a;
+        }
+
+        .hidden { display: none !important; }
+
+        .btn-pixel {
+            padding: 4px 12px; text-transform: uppercase; font-weight: bold;
+            border: 4px solid var(--color-primary); background: var(--color-panel);
+            box-shadow: inset -2px -2px 0px var(--color-shadow); cursor: pointer;
+        }
+        .btn-pixel:hover { background: var(--color-primary); color: var(--color-bg-dark); }
+
+        .menu-scroll {
+            background: linear-gradient(180deg, var(--color-bg-dark) 0%, var(--color-panel) 45%, var(--color-panel) 55%, var(--color-bg-dark) 100%);
+            border: 6px solid var(--color-primary);
+            box-shadow: 0 0 6px 2px color-mix(in srgb, var(--color-primary) 55%, transparent),
+                        0 0 28px 4px color-mix(in srgb, var(--color-primary) 28%, transparent),
+                        0 0 70px color-mix(in srgb, var(--color-primary) 12%, transparent),
+                        inset 0 0 40px rgba(0,0,0,0.45);
+            width: 640px; max-width: 92vw; max-height: 92vh;
+            overflow-y: auto; scrollbar-width: none;
+        }
+        .menu-scroll::-webkit-scrollbar { display: none; }
+
+        .start-menu-btn {
+            display: flex; align-items: center; gap: 12px; width: 100%;
+            padding: 14px 24px; font-family: 'VT323', monospace; font-size: 1.45rem;
+            text-transform: uppercase; letter-spacing: 0.07em; color: var(--color-glow);
+            background: transparent; border: none; border-bottom: 2px solid var(--color-shadow);
+            cursor: pointer; text-shadow: 2px 2px 0 var(--color-shadow);
+            text-align: left; transition: background 0.12s, padding-left 0.12s;
+        }
+        .start-menu-btn:hover { background: color-mix(in srgb, var(--color-primary) 10%, transparent); color: #fff; padding-left: 28px; }
+        .start-menu-btn:last-child { border-bottom: none; }
+
+        .start-back-btn {
+            font-family: 'VT323', monospace; font-size: 1.1rem; text-transform: uppercase;
+            padding: 6px 14px; color: var(--color-primary); background: transparent;
+            border: 4px solid var(--color-primary); cursor: pointer; letter-spacing: 0.05em;
+        }
+        .start-back-btn:hover { background: var(--color-primary); color: var(--color-bg-dark); }
+
+        .subpanel-header {
+            display: flex; align-items: center; gap: 16px; padding: 16px;
+            background: var(--color-bg-dark); position: sticky; top: 0; z-index: 10;
+            border-bottom: 6px solid var(--color-primary);
+        }
+        .subpanel-header h2 {
+            font-size: 1.5rem; color: var(--color-glow);
+            font-weight: bold; text-transform: uppercase; font-style: italic;
+        }
+        .subpanel-footer { position: sticky; bottom: 0; height: 6px; background: var(--color-bg-dark); }
     </style>
 </head>
-<body class="p-1 sm:p-2">
+<body>
 
-    <div class="max-w-3xl w-full mx-auto flex flex-col items-center">
-        <!-- Dashboard / Header -->
-        <div class="flex justify-between items-center w-full mb-2 sm:mb-4 px-2">
-            <div class="flex flex-col gap-1">
-                <div class="display-panel px-4 py-1 text-center">
-                    <div class="text-[8px] opacity-60 uppercase tracking-tighter">Score</div>
-                    <div id="score-display" class="text-xl font-bold tracking-tighter">0</div>
+    <!-- ─── START OVERLAY ─── -->
+    <div id="start-overlay" class="fixed inset-0 z-[200] flex items-center justify-center" style="background:#000;">
+        <div id="start-main" class="menu-scroll relative z-10">
+            <div class="text-center pt-4 pb-4 px-6" style="border-bottom: 4px solid var(--color-shadow);">
+                <div style="min-height:180px; display:flex; align-items:center; justify-content:center;">
+                    <h1 style="font-family:'VT323',monospace; font-size:clamp(2.5rem,10vw,5rem);
+                                color:var(--color-glow); text-shadow:3px 3px 0 var(--color-shadow);
+                                text-transform:uppercase; letter-spacing:0.12em; line-height:1.1;">
+                        FRUIT FIGHT
+                    </h1>
                 </div>
-                <div class="display-panel px-4 py-1 text-center">
-                    <div class="text-[8px] opacity-60 uppercase tracking-tighter">Best</div>
-                    <div id="high-score-display" class="text-sm font-bold tracking-tighter" style="color:var(--gold)">0</div>
+                <div class="flex items-center justify-center gap-3 mt-2">
+                    <div class="flex-grow h-px" style="background:linear-gradient(to right,transparent,var(--color-primary))"></div>
+                    <span style="font-size:1rem; color:var(--color-primary); text-transform:uppercase; letter-spacing:0.4em;">SPIN TO WIN</span>
+                    <div class="flex-grow h-px" style="background:linear-gradient(to left,transparent,var(--color-primary))"></div>
                 </div>
             </div>
-            
-            <h1 class="text-2xl sm:text-4xl md:text-6xl casino-title italic uppercase">Fruit Fight</h1>
+            <div class="flex flex-col">
+                <button class="start-menu-btn" onclick="startGame()"><span>Play</span><span class="ml-auto text-base opacity-40 font-sans">↵</span></button>
+                <button class="start-menu-btn" onclick="showStartPanel('howtoplay')"><span>How to Play</span><span class="ml-auto text-base opacity-40 font-sans">›</span></button>
+                <button class="start-menu-btn" onclick="showStartPanel('highscores')"><span>High Scores</span><span class="ml-auto text-base opacity-40 font-sans">›</span></button>
+                <button class="start-menu-btn" onclick="showStartPanel('patchnotes')"><span>Patch Notes</span><span class="ml-auto text-base opacity-40 font-sans">›</span></button>
+                <button class="start-menu-btn" onclick="showStartPanel('settings')"><span>Settings</span><span class="ml-auto text-base opacity-40 font-sans">›</span></button>
+            </div>
+            <p style="font-size:10px; text-transform:uppercase; letter-spacing:0.35em; color:var(--color-primary); opacity:0.6; text-align:center; padding:12px 0; border-top: 1px solid var(--color-shadow);">
+                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.906
+            </p>
+        </div>
 
-            <div class="flex gap-2">
-                <button onclick="toggleModal('help-modal')" class="sleek-btn header-btn px-3 text-[10px]">Rules</button>
-                <button onclick="toggleModal('pay-modal')" class="sleek-btn header-btn header-btn--gold px-3 text-[10px]">Paytable</button>
-                <button onclick="openHistory()" class="sleek-btn header-btn px-3 text-[10px]">History</button>
+        <div id="start-howtoplay" class="menu-scroll hidden relative z-10">
+            <div class="subpanel-header"><button class="start-back-btn" onclick="showStartPanel('main')">← Back</button><h2>How to Play</h2></div>
+            <div class="p-5 text-[12px]"><p style="color:var(--color-primary);opacity:0.5;text-align:center;margin-top:32px">Coming soon.</p></div>
+            <div class="subpanel-footer"></div>
+        </div>
+
+        <div id="start-highscores" class="menu-scroll hidden relative z-10">
+            <div class="subpanel-header"><button class="start-back-btn" onclick="showStartPanel('main')">← Back</button><h2>High Scores</h2></div>
+            <div class="p-5" id="highscore-list"><p style="text-align:center;color:var(--color-primary);opacity:0.5;font-size:0.875rem;margin-top:32px">No scores recorded yet.</p></div>
+            <div class="subpanel-footer"></div>
+        </div>
+
+        <div id="start-patchnotes" class="menu-scroll hidden relative z-10">
+            <div class="subpanel-header"><button class="start-back-btn" onclick="showStartPanel('main')">← Back</button><h2>Patch Notes</h2></div>
+            <div id="patchnotes-list" class="p-5 text-[12px] space-y-5"></div>
+            <div class="subpanel-footer"></div>
+        </div>
+
+        <div id="start-settings" class="menu-scroll hidden relative z-10">
+            <div class="subpanel-header"><button class="start-back-btn" onclick="showStartPanel('main')">← Back</button><h2>Settings</h2></div>
+            <div class="p-6 space-y-6">
+                <div>
+                    <h3 style="color:var(--color-glow);text-transform:uppercase;font-weight:bold;font-size:0.875rem;border-bottom:1px solid var(--color-shadow);padding-bottom:8px;margin-bottom:16px;letter-spacing:0.1em">Audio</h3>
+                    <div class="flex items-center justify-between py-2" style="border-bottom:1px solid var(--color-shadow)">
+                        <span>SFX Volume</span>
+                        <div class="flex items-center gap-3">
+                            <input type="range" id="vol-slider" min="0" max="100" value="100" oninput="updateVolume(this.value)" style="accent-color:var(--color-primary);width:120px">
+                            <span id="vol-val" style="color:var(--color-glow);width:40px;text-align:right">100%</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between py-2">
+                        <span>Sound Effects</span>
+                        <button id="sfx-toggle" onclick="toggleSFX()" class="btn-pixel text-sm px-4">ON</button>
+                    </div>
+                </div>
+            </div>
+            <div class="subpanel-footer"></div>
+        </div>
+    </div>
+
+    <!-- ─── GAME CONTAINER ─── -->
+    <div id="game-container" class="hidden w-full h-full">
+
+    <div class="game-shell">
+
+        <!-- Title -->
+        <h1 class="casino-title text-center uppercase italic text-3xl sm:text-5xl leading-none mb-2">Fruit Fight</h1>
+
+        <!-- Score + Stats combined bar -->
+        <div class="grid grid-cols-5 gap-1.5 mb-2 w-full">
+            <div class="display-panel p-1.5 text-center col-span-2">
+                <div class="stat-label">Score</div>
+                <div id="score-display" class="stat-value">0</div>
+            </div>
+            <div class="display-panel p-1.5 text-center">
+                <div class="stat-label">Spins</div>
+                <div id="spins" class="stat-value">15</div>
+            </div>
+            <div class="display-panel p-1.5 text-center">
+                <div class="stat-label">Nudges</div>
+                <div id="nudges" class="stat-value" style="color:var(--teal-mid)">8</div>
+            </div>
+            <div class="display-panel p-1.5 text-center">
+                <div class="stat-label">Holds</div>
+                <div id="holds" class="stat-value" style="color:var(--teal-light)">5</div>
             </div>
         </div>
 
-        <!-- Main Machine Bezel -->
-        <div class="slot-bezel p-2 sm:p-4">
-            <!-- Compact Stats Bar -->
-            <div class="grid grid-cols-3 gap-2 sm:gap-3 mb-2 sm:mb-4">
-                <div class="display-panel p-2 text-center">
-                    <div class="text-[8px] opacity-60 uppercase">Spins</div>
-                    <div id="spins" class="text-lg font-bold">15</div>
-                </div>
-                <div class="display-panel p-2 text-center" style="color: var(--teal-mid);">
-                    <div class="text-[8px] opacity-60 uppercase">Nudges</div>
-                    <div id="nudges" class="text-lg font-bold">8</div>
-                </div>
-                <div class="display-panel p-2 text-center" style="color: var(--teal-light);">
-                    <div class="text-[8px] opacity-60 uppercase">Holds</div>
-                    <div id="holds" class="text-lg font-bold">5</div>
-                </div>
-            </div>
-
+        <!-- Machine Bezel -->
+        <div class="slot-bezel p-2 sm:p-3 w-full">
             <div class="reels-area-wrapper">
                 <svg id="win-overlay"></svg>
-                <div class="grid grid-cols-5 gap-2 relative" id="reels-grid">
+                <div class="grid grid-cols-5 gap-1.5 sm:gap-2 relative" id="reels-grid">
                     <template id="reel-template">
                         <div class="flex flex-col items-center reel-container">
                             <button class="sleek-btn nudge-btn nudge-up">▲</button>
-                            <div class="reel-window w-full mt-2 mb-2">
+                            <div class="reel-window w-full mt-1.5 mb-1.5">
                                 <div class="reel-strip"></div>
                             </div>
                             <button class="sleek-btn nudge-btn nudge-down">▼</button>
@@ -326,15 +489,22 @@
         </div>
 
         <!-- Console -->
-        <div class="mt-2 sm:mt-4 w-full flex items-center justify-between bg-black/30 p-2 sm:p-4 rounded-[25px] border border-white/5 backdrop-blur-md">
-            <div id="message-display" class="text-sm sm:text-lg font-light text-teal-200 uppercase tracking-widest">
-                Ready
-            </div>
-
-            <button id="spin-btn" onclick="spin()" class="spin-btn-main sleek-btn px-6 py-3 text-xl sm:px-12 sm:py-4 sm:text-2xl uppercase">
-                Spin
-            </button>
+        <div class="console-bar mt-2 w-full">
+            <div id="message-display" class="message-text">Ready</div>
+            <button id="spin-btn" onclick="spin()" class="spin-btn-main sleek-btn spin-btn-size uppercase">Spin</button>
         </div>
+
+        <!-- Utility buttons -->
+        <div class="flex gap-2 w-full mt-2">
+            <button onclick="toggleModal('help-modal')" class="sleek-btn utility-btn flex-1">Rules</button>
+            <button onclick="toggleModal('pay-modal')" class="sleek-btn utility-btn header-btn--gold flex-1">Paytable</button>
+            <button onclick="openHistory()" class="sleek-btn utility-btn flex-1">History</button>
+            <div class="display-panel p-1.5 text-center flex-1">
+                <div class="stat-label">Best</div>
+                <div id="high-score-display" class="stat-value" style="color:var(--gold)">0</div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Modals -->
@@ -447,7 +617,60 @@
         </div>
     </div>
 
+    </div><!-- end #game-container -->
+
     <script>
+        // ─── START MENU JS ───
+        const PATCH_NOTES = [];
+        const HS_KEY = 'fruitfight_hs';
+
+        function saveScore(score, label='') {
+            const scores = getScores();
+            scores.push({ score, label, date: new Date().toLocaleDateString() });
+            scores.sort((a,b)=>b.score-a.score);
+            scores.splice(10);
+            localStorage.setItem(HS_KEY, JSON.stringify(scores));
+        }
+        function getScores() {
+            try { return JSON.parse(localStorage.getItem(HS_KEY)) || []; } catch { return []; }
+        }
+        function renderHighScores() {
+            const el = document.getElementById('highscore-list');
+            const scores = getScores();
+            const primary = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
+            const glow    = getComputedStyle(document.documentElement).getPropertyValue('--color-glow').trim();
+            const shadow  = getComputedStyle(document.documentElement).getPropertyValue('--color-shadow').trim();
+            if (!scores.length) { el.innerHTML = `<p style="text-align:center;color:${primary};opacity:0.5;font-size:0.875rem;margin-top:32px">No scores recorded yet.</p>`; return; }
+            el.innerHTML = scores.map((s,i) => `<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid ${shadow};font-size:0.875rem"><span style="color:${primary};width:24px;text-align:right">${i+1}.</span><span style="flex:1;color:#fff">${s.label||'—'}</span><span style="color:${glow};font-weight:bold">${s.score}</span><span style="color:${primary};opacity:0.5;font-size:0.75rem">${s.date}</span></div>`).join('');
+        }
+        function renderPatchNotes() {
+            const el = document.getElementById('patchnotes-list');
+            const primary = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
+            const glow    = getComputedStyle(document.documentElement).getPropertyValue('--color-glow').trim();
+            if (!PATCH_NOTES.length) { el.innerHTML = `<p style="text-align:center;color:${primary};opacity:0.5;font-size:0.875rem;margin-top:32px">No patch notes yet.</p>`; return; }
+            el.innerHTML = PATCH_NOTES.map(p => `<div><div style="display:flex;align-items:baseline;gap:12px;margin-bottom:4px"><span style="color:${glow};font-weight:bold">${p.v}</span><span style="color:${primary};opacity:0.6;font-size:10px">${p.date}</span></div><ul style="margin:0;padding:0;list-style:none">${p.notes.map(n=>`<li style="color:#d1d5db">• ${n}</li>`).join('')}</ul></div>`).join('');
+        }
+        const PANELS = ['main','howtoplay','settings','highscores','patchnotes'];
+        function showStartPanel(name, fromPopstate=false) {
+            PANELS.forEach(p => { const el = document.getElementById('start-'+p); if (el) el.classList.toggle('hidden', p !== name); });
+            if (name === 'highscores') renderHighScores();
+            if (name === 'patchnotes') renderPatchNotes();
+            if (!fromPopstate && name !== 'main') history.pushState({ panel: name }, '');
+        }
+        window.addEventListener('popstate', function(e) {
+            const ov = document.getElementById('start-overlay');
+            if (ov && !ov.classList.contains('hidden')) showStartPanel('main', true);
+        });
+        let sfxEnabled = true;
+        function updateVolume(val) { document.getElementById('vol-val').innerText = val + '%'; }
+        function toggleSFX() { sfxEnabled = !sfxEnabled; document.getElementById('sfx-toggle').innerText = sfxEnabled ? 'ON' : 'OFF'; }
+        function startGame() {
+            document.getElementById('start-overlay').classList.add('hidden');
+            document.getElementById('game-container').classList.remove('hidden');
+            initMatch();
+        }
+
+        // ─── GAME JS ───
         const FF_KEY = 'ff_stats';
 
         function loadStats() {
@@ -752,7 +975,7 @@
         function toggleHold(reelIndex) {
             if (!hasSpunOnce || isSpinning) return;
             const activeCount = heldReels.filter(h => h).length;
-            if (!heldReels[reelIndex]) { if (activeCount < holdsLeft) heldReels[reelIndex] = true; } 
+            if (!heldReels[reelIndex]) { if (activeCount < holdsLeft) heldReels[reelIndex] = true; }
             else heldReels[reelIndex] = false;
             document.getElementById(`reel-${reelIndex}`).classList.toggle('held', heldReels[reelIndex]);
             document.getElementById(`hold-${reelIndex}`).classList.toggle('active', heldReels[reelIndex]);
@@ -963,9 +1186,6 @@
                 if (!isModalOpen()) spin();
             }
         });
-
-        window.onload = initMatch;
     </script>
-    <p style="font-size:10px;text-align:center;opacity:0.4;padding:8px;letter-spacing:0.3em;text-transform:uppercase;">&copy; Tacticon Studios 2026 &mdash; v0.0.903</p>
 </body>
 </html>
