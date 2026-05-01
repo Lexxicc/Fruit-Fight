@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fruit Fight</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap');
+
+        :root {
+            --nav-bg: #002D47;
+            --teal-primary: #54D8A8;
+            --teal-mid: #65DCB1;
+            --teal-light: #76E0B9;
+            --win-teal: #54D8A8;
+            --gold: #ffd700; 
+            --sym-size: 80px; /* Reduced from 100px */
+            --peek-size: 40px; /* Reduced from 50px */
+        }
+
+        body {
+            background-color: #001a2d;
+            background-image: radial-gradient(circle at center, var(--nav-bg) 0%, #000c1a 100%);
+            font-family: 'Roboto', sans-serif;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .casino-title {
+            font-family: 'Bungee', cursive;
+            color: var(--teal-light);
+            text-shadow: 0 0 10px rgba(84, 216, 168, 0.5), 2px 2px 0px #000;
+            letter-spacing: 2px;
+        }
+
+        /* Compact Cabinet */
+        .slot-bezel {
+            background: rgba(0, 45, 71, 0.8);
+            border: 2px solid var(--teal-primary);
+            border-radius: 30px;
+            box-shadow: 0 0 40px rgba(84, 216, 168, 0.15), 0 15px 40px rgba(0, 0, 0, 0.8);
+            position: relative;
+            backdrop-filter: blur(10px);
+            width: fit-content;
+        }
+
+        .reels-area-wrapper {
+            position: relative;
+            padding: 5px 0;
+        }
+
+        .reel-window {
+            height: 320px; /* (80 * 3) + 40 + 40 */
+            overflow: hidden;
+            background: #000;
+            border: 2px solid #00365c;
+            border-radius: 8px;
+            position: relative;
+            box-shadow: inset 0 0 40px #000;
+        }
+
+        .reel-window::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(180deg, 
+                rgba(0,0,0,0.8) 0%, 
+                rgba(0,0,0,0.1) 15%, 
+                rgba(0,0,0,0) 25%, 
+                rgba(0,0,0,0) 75%, 
+                rgba(0,0,0,0.1) 85%, 
+                rgba(0,0,0,0.8) 100%);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .reel-strip {
+            transition: transform 0.3s ease-out;
+            display: flex;
+            flex-direction: column;
+            transform: translateY(calc(var(--peek-size) * -1));
+        }
+
+        .symbol {
+            height: var(--sym-size);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            user-select: none;
+            padding: 5px;
+            flex-shrink: 0;
+            transition: opacity 0.3s;
+        }
+
+        .reel-strip .symbol:first-child,
+        .reel-strip .symbol:last-child {
+            opacity: 0.3;
+            filter: grayscale(0.5) blur(0.5px);
+        }
+
+        .symbol svg {
+            width: 60px;
+            height: 60px;
+            filter: drop-shadow(0 3px 5px rgba(0,0,0,0.6));
+        }
+
+        .sleek-btn {
+            background: rgba(0, 45, 71, 0.6);
+            border: 1px solid var(--teal-primary);
+            border-radius: 8px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--teal-primary);
+            font-weight: 600;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .sleek-btn:hover:not(:disabled) {
+            background: var(--teal-primary);
+            color: #002D47;
+        }
+
+        .sleek-btn:disabled {
+            opacity: 0.15;
+            cursor: not-allowed;
+        }
+
+        .nudge-btn { height: 28px; font-size: 0.6rem; width: 100%; z-index: 50; }
+        .hold-btn { height: 32px; font-size: 0.7rem; margin-top: 6px; z-index: 50; }
+
+        .hold-btn.active {
+            background: var(--teal-primary);
+            color: #002D47;
+            box-shadow: 0 0 15px var(--teal-primary);
+        }
+
+        .display-panel {
+            background: rgba(0, 12, 20, 0.8);
+            border: 1px solid rgba(84, 216, 168, 0.2);
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            color: var(--teal-light);
+            text-shadow: 0 0 5px rgba(118, 224, 185, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .win-highlight {
+            animation: pulse-win 0.5s infinite;
+            background: rgba(84, 216, 168, 0.15);
+            box-shadow: inset 0 0 20px var(--teal-primary);
+            border-radius: 12px;
+            opacity: 1 !important;
+            filter: none !important;
+        }
+
+        #win-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 45;
+        }
+
+        .win-line-path {
+            fill: none;
+            stroke: var(--teal-primary);
+            stroke-width: 3;
+            stroke-linecap: round;
+            filter: drop-shadow(0 0 5px var(--teal-primary));
+            stroke-dasharray: 2000;
+            stroke-dashoffset: 2000;
+            animation: drawLine 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes drawLine { to { stroke-dashoffset: 0; } }
+        @keyframes pulse-win { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+
+        .spin-btn-main {
+            background: linear-gradient(135deg, var(--teal-primary) 0%, #2e8b6b 100%);
+            border: none;
+            box-shadow: 0 5px 15px rgba(84, 216, 168, 0.3);
+            font-family: 'Bungee', cursive;
+            color: #002D47 !important;
+            border-radius: 15px;
+        }
+
+        .info-modal-content {
+            background: #001a2d;
+            border: 2px solid var(--teal-primary);
+            max-width: 450px;
+            width: 90%;
+            border-radius: 20px;
+        }
+    </style>
+</head>
+<body class="p-2">
+
+    <div class="max-w-3xl w-full mx-auto flex flex-col items-center">
+        <!-- Dashboard / Header -->
+        <div class="flex justify-between items-center w-full mb-4 px-2">
+            <div class="flex flex-col gap-1">
+                <div class="display-panel px-4 py-1 text-center">
+                    <div class="text-[8px] opacity-60 uppercase tracking-tighter">Balance</div>
+                    <div id="balance" class="text-xl font-bold tracking-tighter">15.00</div>
+                </div>
+            </div>
+            
+            <h1 class="text-4xl md:text-6xl casino-title italic uppercase">Fruit Fight</h1>
+
+            <div class="flex gap-2">
+                <button onclick="toggleModal('help-modal')" class="sleek-btn px-3 py-1 text-[10px]">Rules</button>
+                <button onclick="toggleModal('pay-modal')" class="sleek-btn px-3 py-1 text-[10px]" style="color: var(--gold); border-color: var(--gold);">Paytable</button>
+            </div>
+        </div>
+
+        <!-- Main Machine Bezel -->
+        <div class="slot-bezel p-4">
+            <!-- Compact Stats Bar -->
+            <div class="grid grid-cols-3 gap-3 mb-4">
+                <div class="display-panel p-2 text-center">
+                    <div class="text-[8px] opacity-60 uppercase">Spins</div>
+                    <div id="spins" class="text-lg font-bold">15</div>
+                </div>
+                <div class="display-panel p-2 text-center" style="color: var(--teal-mid);">
+                    <div class="text-[8px] opacity-60 uppercase">Nudges</div>
+                    <div id="nudges" class="text-lg font-bold">8</div>
+                </div>
+                <div class="display-panel p-2 text-center" style="color: var(--teal-light);">
+                    <div class="text-[8px] opacity-60 uppercase">Holds</div>
+                    <div id="holds" class="text-lg font-bold">5</div>
+                </div>
+            </div>
+
+            <div class="reels-area-wrapper">
+                <svg id="win-overlay"></svg>
+                <div class="grid grid-cols-5 gap-2 relative" id="reels-grid">
+                    <template id="reel-template">
+                        <div class="flex flex-col items-center reel-container">
+                            <button class="sleek-btn nudge-btn nudge-up">▲</button>
+                            <div class="reel-window w-full mt-2 mb-2">
+                                <div class="reel-strip"></div>
+                            </div>
+                            <button class="sleek-btn nudge-btn nudge-down">▼</button>
+                            <button class="sleek-btn hold-btn w-full uppercase">HOLD</button>
+                        </div>
+                    </template>
+                    <div id="reel-0-container" class="reel-col"></div>
+                    <div id="reel-1-container" class="reel-col"></div>
+                    <div id="reel-2-container" class="reel-col"></div>
+                    <div id="reel-3-container" class="reel-col"></div>
+                    <div id="reel-4-container" class="reel-col"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Console -->
+        <div class="mt-4 w-full flex items-center justify-between bg-black/30 p-4 rounded-[25px] border border-white/5 backdrop-blur-md">
+            <div class="flex flex-col items-center gap-0">
+                <div class="text-teal-500/60 uppercase text-[8px] font-bold tracking-widest">Stake</div>
+                <div class="display-panel px-6 py-2 text-2xl font-bold tracking-tighter">1.00</div>
+            </div>
+            
+            <div id="message-display" class="text-lg font-light text-teal-200 uppercase tracking-widest">
+                Ready
+            </div>
+
+            <button id="spin-btn" onclick="spin()" class="spin-btn-main sleek-btn px-12 py-4 text-2xl uppercase">
+                Spin
+            </button>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="help-modal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[100] hidden p-4 backdrop-blur-xl">
+        <div class="info-modal-content overflow-hidden border-teal-500/50">
+            <div class="bg-teal-900/20 p-4 flex justify-between items-center">
+                <h3 class="font-bold text-lg uppercase Orbitron text-[var(--teal-light)] tracking-widest">Rules</h3>
+                <button onclick="toggleModal('help-modal')" class="text-3xl font-light hover:text-teal-300">&times;</button>
+            </div>
+            <div class="p-6 space-y-4 text-gray-300 text-sm leading-relaxed">
+                <p>Match identical fruits along 5 lines. Pays <span class="text-teal-400 font-bold">BOTH WAYS</span>.</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-3 bg-black/20 rounded-xl border border-white/5">
+                        <div class="text-teal-400 font-bold text-xs">NUDGES</div>
+                        <p class="text-[10px]">Shift reels up/down after a spin.</p>
+                    </div>
+                    <div class="p-3 bg-black/20 rounded-xl border border-white/5">
+                        <div class="text-teal-400 font-bold text-xs">HOLDS</div>
+                        <p class="text-[10px]">Lock reels for next spin. Costs 1 Hold.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="pay-modal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[100] hidden p-4 backdrop-blur-xl">
+        <div class="info-modal-content overflow-hidden border-teal-500/50">
+            <div class="bg-teal-900/20 p-4 flex justify-between items-center">
+                <h3 class="font-bold text-lg uppercase Orbitron text-[var(--teal-light)] tracking-widest">Paytable</h3>
+                <button onclick="toggleModal('pay-modal')" class="text-3xl font-light">&times;</button>
+            </div>
+            <div class="p-6 space-y-2">
+                <div class="grid grid-cols-5 font-bold text-teal-400/50 text-[10px] uppercase border-b border-white/10 pb-1">
+                    <div>Fruit</div><div>2x</div><div>3x</div><div>4x</div><div>5x</div>
+                </div>
+                <div class="grid grid-cols-5 font-bold text-white text-xs items-center">
+                    <div class="text-yellow-500">Lucky 7</div><div class="text-teal-400/30">—</div><div>20</div><div>100</div><div class="text-lg text-yellow-400">500</div>
+                </div>
+                <div class="grid grid-cols-5 text-gray-300 text-xs"><div>Melon</div><div class="text-teal-400/30">—</div><div>10</div><div>40</div><div>200</div></div>
+                <div class="grid grid-cols-5 text-gray-300 text-xs"><div>Grape</div><div class="text-teal-400/30">—</div><div>5</div><div>20</div><div>100</div></div>
+                <div class="grid grid-cols-5 text-gray-300 text-xs"><div>Orange</div><div class="text-teal-400/30">—</div><div>2</div><div>10</div><div>50</div></div>
+                <div class="grid grid-cols-5 text-gray-300 text-xs"><div>Cherry</div><div>1</div><div>5</div><div>20</div><div class="text-teal-400/30">—</div></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-over-modal" class="fixed inset-0 bg-black/98 flex items-center justify-center z-[100] hidden p-4 backdrop-blur-2xl">
+        <div class="text-center max-w-sm">
+            <h2 class="text-5xl casino-title mb-6 uppercase">Final</h2>
+            <div id="final-stats" class="display-panel p-8 text-4xl font-bold mb-8">0.00</div>
+            <button onclick="location.reload()" class="spin-btn-main px-10 py-4 text-lg w-full uppercase">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const SVG_SEVEN = `
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="thinGold" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#b8860b" /><stop offset="50%" stop-color="#ffd700" /><stop offset="100%" stop-color="#b8860b" /></linearGradient>
+                <linearGradient id="deepRed" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ff1a1a" /><stop offset="50%" stop-color="#990000" /><stop offset="100%" stop-color="#660000" /></linearGradient>
+                <filter id="gentleBevel" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur in="SourceAlpha" stdDeviation="1" result="blur" /><feSpecularLighting in="blur" surfaceScale="3" specularConstant="0.8" specularExponent="30" lighting-color="white" result="spec"><fePointLight x="-20" y="-30" z="50" /></feSpecularLighting><feComposite in="spec" in2="SourceAlpha" operator="in" /><feMerge><feMergeNode in="SourceGraphic" /><feMergeNode /></feMerge></filter>
+            </defs>
+            <path d="M12 25 L88 25 L45 92 L22 92 L68 37 L12 37 Z" fill="url(#thinGold)" stroke="#2a1f08" stroke-width="0.5"/>
+            <path d="M15 28 L85 28 L47 89 L27 89 L65 35 L15 35 Z" fill="url(#deepRed)" filter="url(#gentleBevel)" />
+            <path d="M15 28 L85 28 L83 29 L17 29 Z" fill="white" fill-opacity="0.3" />
+        </svg>`;
+
+        const SVG_CHERRY = `
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <radialGradient id="ch_r" cx="35%" cy="30%" r="66%">
+                    <stop offset="0%" stop-color="#ff7575"/>
+                    <stop offset="45%" stop-color="#cc0000"/>
+                    <stop offset="100%" stop-color="#6b0000"/>
+                </radialGradient>
+            </defs>
+            <path d="M 30 58 Q 38 42 50 28" stroke="#2d6e1e" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <path d="M 70 58 Q 62 42 50 28" stroke="#2d6e1e" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <path d="M 50 28 L 50 14" stroke="#2d6e1e" stroke-width="4" stroke-linecap="round"/>
+            <path d="M 50 18 C 65 6 82 16 74 28 C 62 34 50 18 50 18 Z" fill="#3aab2a"/>
+            <circle cx="30" cy="74" r="18" fill="url(#ch_r)"/>
+            <ellipse cx="24" cy="66" rx="6" ry="4" fill="rgba(255,255,255,0.28)" transform="rotate(-30 24 66)"/>
+            <circle cx="70" cy="74" r="18" fill="url(#ch_r)"/>
+            <ellipse cx="64" cy="66" rx="6" ry="4" fill="rgba(255,255,255,0.28)" transform="rotate(-30 64 66)"/>
+        </svg>`;
+
+        const SVG_WATERMELON = `
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <radialGradient id="wm_f" cx="50%" cy="35%" r="75%">
+                    <stop offset="0%" stop-color="#ff7070"/>
+                    <stop offset="55%" stop-color="#dd1111"/>
+                    <stop offset="100%" stop-color="#8a0000"/>
+                </radialGradient>
+                <linearGradient id="wm_r" x1="50%" y1="0%" x2="50%" y2="100%">
+                    <stop offset="0%" stop-color="#4aad44"/>
+                    <stop offset="100%" stop-color="#1a5e14"/>
+                </linearGradient>
+            </defs>
+            <path d="M 8 65 A 42 42 0 0 0 92 65 L 50 95 Z" fill="url(#wm_r)"/>
+            <path d="M 14 65 A 36 36 0 0 0 86 65 L 50 92 Z" fill="#dff2da"/>
+            <path d="M 20 65 A 30 30 0 0 0 80 65 L 50 89 Z" fill="url(#wm_f)"/>
+            <ellipse cx="37" cy="75" rx="2.5" ry="4.5" fill="#111" transform="rotate(-18 37 75)"/>
+            <ellipse cx="50" cy="71" rx="2.5" ry="4.5" fill="#111"/>
+            <ellipse cx="63" cy="75" rx="2.5" ry="4.5" fill="#111" transform="rotate(18 63 75)"/>
+            <ellipse cx="43" cy="82" rx="2" ry="3.5" fill="#111" transform="rotate(-10 43 82)"/>
+            <ellipse cx="57" cy="82" rx="2" ry="3.5" fill="#111" transform="rotate(10 57 82)"/>
+            <path d="M 25 67 Q 50 56 75 67" stroke="rgba(255,255,255,0.22)" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </svg>`;
+
+        const SVG_GRAPE = `
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <radialGradient id="gr_g" cx="35%" cy="28%" r="68%">
+                    <stop offset="0%" stop-color="#d096f0"/>
+                    <stop offset="50%" stop-color="#7c22cc"/>
+                    <stop offset="100%" stop-color="#3b0870"/>
+                </radialGradient>
+            </defs>
+            <path d="M 50 15 L 50 27" stroke="#6b4226" stroke-width="3.5" stroke-linecap="round"/>
+            <path d="M 50 22 C 62 11 76 18 68 29 C 58 34 50 22 50 22 Z" fill="#3aab2a"/>
+            <path d="M 50 22 C 38 13 24 20 32 31 C 42 36 50 22 50 22 Z" fill="#2d9020"/>
+            <circle cx="41" cy="43" r="11" fill="url(#gr_g)"/>
+            <circle cx="59" cy="43" r="11" fill="url(#gr_g)"/>
+            <circle cx="30" cy="60" r="11" fill="url(#gr_g)"/>
+            <circle cx="50" cy="60" r="11" fill="url(#gr_g)"/>
+            <circle cx="70" cy="60" r="11" fill="url(#gr_g)"/>
+            <circle cx="41" cy="76" r="11" fill="url(#gr_g)"/>
+            <circle cx="59" cy="76" r="11" fill="url(#gr_g)"/>
+            <circle cx="50" cy="90" r="10" fill="url(#gr_g)"/>
+            <circle cx="36" cy="38" r="3.5" fill="rgba(255,255,255,0.35)"/>
+            <circle cx="54" cy="38" r="3.5" fill="rgba(255,255,255,0.35)"/>
+            <circle cx="25" cy="55" r="3.5" fill="rgba(255,255,255,0.35)"/>
+            <circle cx="45" cy="55" r="3.5" fill="rgba(255,255,255,0.35)"/>
+            <circle cx="65" cy="55" r="3.5" fill="rgba(255,255,255,0.35)"/>
+            <circle cx="36" cy="71" r="3.5" fill="rgba(255,255,255,0.35)"/>
+            <circle cx="54" cy="71" r="3.5" fill="rgba(255,255,255,0.35)"/>
+            <circle cx="45" cy="86" r="3" fill="rgba(255,255,255,0.35)"/>
+        </svg>`;
+
+        const SVG_ORANGE = `
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <radialGradient id="or_b" cx="38%" cy="33%" r="65%">
+                    <stop offset="0%" stop-color="#ffe066"/>
+                    <stop offset="40%" stop-color="#ff9800"/>
+                    <stop offset="100%" stop-color="#bf5000"/>
+                </radialGradient>
+            </defs>
+            <rect x="47" y="10" width="6" height="14" rx="3" fill="#5c3a1e"/>
+            <path d="M 50 18 C 65 6 82 14 74 28 C 62 36 50 18 50 18 Z" fill="#3aab2a"/>
+            <circle cx="50" cy="62" r="35" fill="url(#or_b)"/>
+            <line x1="50" y1="27" x2="50" y2="97" stroke="rgba(170,80,0,0.18)" stroke-width="1.5"/>
+            <line x1="50" y1="27" x2="50" y2="97" stroke="rgba(170,80,0,0.18)" stroke-width="1.5" transform="rotate(60 50 62)"/>
+            <line x1="50" y1="27" x2="50" y2="97" stroke="rgba(170,80,0,0.18)" stroke-width="1.5" transform="rotate(120 50 62)"/>
+            <circle cx="50" cy="62" r="7" fill="none" stroke="rgba(150,70,0,0.28)" stroke-width="2"/>
+            <circle cx="50" cy="62" r="3.5" fill="rgba(150,70,0,0.22)"/>
+            <ellipse cx="37" cy="48" rx="9" ry="6.5" fill="rgba(255,255,255,0.28)" transform="rotate(-25 37 48)"/>
+        </svg>`;
+
+        const SYMBOLS = [
+            { icon: SVG_SEVEN, value: 'seven', weight: 4 },
+            { icon: SVG_WATERMELON, value: 'watermelon', weight: 8 },
+            { icon: SVG_GRAPE, value: 'grape', weight: 14 },
+            { icon: SVG_ORANGE, value: 'orange', weight: 22 },
+            { icon: SVG_CHERRY, value: 'cherry', weight: 32 }
+        ];
+
+        const PAYOUTS = {
+            seven: [0, 0, 20, 100, 500],
+            watermelon: [0, 0, 10, 40, 200],
+            grape: [0, 0, 5, 20, 100],
+            orange: [0, 0, 2, 10, 50],
+            cherry: [0, 1, 5, 20]
+        };
+
+        const WIN_LINES = [
+            [1, 1, 1, 1, 1], [0, 0, 0, 0, 0], [2, 2, 2, 2, 2], [0, 1, 2, 1, 0], [2, 1, 0, 1, 2]
+        ];
+
+        let balance = 15;
+        let spinsLeft = 15;
+        let nudgesLeft = 8;
+        let holdsLeft = 5;
+        let isSpinning = false;
+        let hasSpunOnce = false;
+        let reelData = [[], [], [], [], []];
+        let heldReels = [false, false, false, false, false];
+
+        function init() {
+            const template = document.getElementById('reel-template');
+            for (let i = 0; i < 5; i++) {
+                const container = document.getElementById(`reel-${i}-container`);
+                const clone = template.content.cloneNode(true);
+                clone.querySelector('.reel-window').id = `reel-${i}`;
+                clone.querySelector('.reel-strip').id = `strip-${i}`;
+                const hBtn = clone.querySelector('.hold-btn');
+                hBtn.id = `hold-${i}`;
+                hBtn.onclick = () => toggleHold(i);
+                clone.querySelector('.nudge-up').onclick = () => nudge(i, -1);
+                clone.querySelector('.nudge-down').onclick = () => nudge(i, 1);
+                container.appendChild(clone);
+                reelData[i] = [];
+                for (let j = 0; j < 5; j++) {
+                    const symbol = getRandomSymbol();
+                    reelData[i].push(symbol);
+                    addSymbolToReel(i, symbol, false);
+                }
+            }
+            window.addEventListener('keydown', (e) => { 
+                if (e.code === 'Space') { 
+                    e.preventDefault(); 
+                    if (!isModalOpen()) spin(); 
+                } 
+            });
+            updateUI();
+        }
+
+        function isModalOpen() {
+            return !document.getElementById('help-modal').classList.contains('hidden') || 
+                   !document.getElementById('pay-modal').classList.contains('hidden') ||
+                   !document.getElementById('game-over-modal').classList.contains('hidden');
+        }
+
+        function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
+
+        function getRandomSymbol() {
+            const totalWeight = SYMBOLS.reduce((sum, s) => sum + s.weight, 0);
+            let random = Math.random() * totalWeight;
+            for (const s of SYMBOLS) { if (random < s.weight) return s; random -= s.weight; }
+            return SYMBOLS[SYMBOLS.length - 1];
+        }
+
+        function addSymbolToReel(reelIndex, symbol, prepend = false) {
+            const strip = document.getElementById(`strip-${reelIndex}`);
+            const div = document.createElement('div');
+            div.className = 'symbol';
+            div.innerHTML = symbol.icon;
+            div.dataset.value = symbol.value;
+            if (prepend) strip.prepend(div); else strip.appendChild(div);
+        }
+
+        function updateUI() {
+            document.getElementById('balance').innerText = balance.toFixed(2);
+            document.getElementById('spins').innerText = spinsLeft;
+            document.getElementById('nudges').innerText = nudgesLeft;
+            document.getElementById('holds').innerText = holdsLeft;
+            const activeCount = heldReels.filter(h => h).length;
+            document.querySelectorAll('.nudge-btn').forEach(btn => btn.disabled = !hasSpunOnce || nudgesLeft <= 0 || isSpinning);
+            document.querySelectorAll('.hold-btn').forEach((btn, idx) => {
+                const isAlreadyActive = heldReels[idx];
+                btn.disabled = !hasSpunOnce || isSpinning || (activeCount >= holdsLeft && !isAlreadyActive) || (holdsLeft <= 0 && !isAlreadyActive);
+            });
+            document.getElementById('spin-btn').disabled = isSpinning || spinsLeft <= 0 || balance < 1;
+            if (!isSpinning && (spinsLeft <= 0 || balance < 1)) endGame();
+        }
+
+        function toggleHold(reelIndex) {
+            if (!hasSpunOnce || isSpinning) return;
+            const activeCount = heldReels.filter(h => h).length;
+            if (!heldReels[reelIndex]) { if (activeCount < holdsLeft) heldReels[reelIndex] = true; } 
+            else heldReels[reelIndex] = false;
+            document.getElementById(`reel-${reelIndex}`).classList.toggle('held', heldReels[reelIndex]);
+            document.getElementById(`hold-${reelIndex}`).classList.toggle('active', heldReels[reelIndex]);
+            updateUI();
+        }
+
+        function nudge(reelIndex, direction) {
+            if (!hasSpunOnce || nudgesLeft <= 0 || isSpinning) return;
+            nudgesLeft--;
+            isSpinning = true;
+            updateUI();
+            const strip = document.getElementById(`strip-${reelIndex}`);
+            const newSym = getRandomSymbol();
+            // Animate the existing strip — reveals the peek symbol that was already showing
+            strip.style.transition = 'transform 0.3s ease-out';
+            strip.style.transform = `translateY(${direction === 1 ? 40 : -120}px)`;
+            setTimeout(() => {
+                strip.style.transition = 'none';
+                if (direction === 1) { // ▼ down — top peek slides into view
+                    strip.lastChild.remove();
+                    addSymbolToReel(reelIndex, newSym, true);
+                    reelData[reelIndex] = [newSym, ...reelData[reelIndex].slice(0, 4)];
+                } else { // ▲ up — bottom peek slides into view
+                    strip.firstChild.remove();
+                    addSymbolToReel(reelIndex, newSym, false);
+                    reelData[reelIndex] = [...reelData[reelIndex].slice(1), newSym];
+                }
+                strip.style.transform = 'translateY(-40px)';
+                strip.offsetHeight;
+                strip.style.transition = 'transform 0.3s ease-out';
+                isSpinning = false;
+                updateUI();
+                calculateWins(true);
+            }, 320);
+        }
+
+        async function spin() {
+            if (isSpinning || balance < 1 || spinsLeft <= 0) return;
+            const holdCount = heldReels.filter(h => h).length;
+            if (holdCount > holdsLeft) return; 
+            isSpinning = true;
+            hasSpunOnce = true;
+            balance -= 1;
+            spinsLeft--;
+            holdsLeft -= holdCount; 
+            clearWinHighlights();
+            updateUI();
+            document.getElementById('message-display').innerText = "SPINNING";
+            const promises = [];
+            for (let i = 0; i < 5; i++) { if (!heldReels[i]) promises.push(animateReel(i)); }
+            await Promise.all(promises);
+            resetHolds();
+            isSpinning = false;
+            calculateWins();
+            updateUI();
+        }
+
+        function resetHolds() {
+            for (let i = 0; i < 5; i++) {
+                heldReels[i] = false;
+                document.getElementById(`reel-${i}`).classList.remove('held');
+                document.getElementById(`hold-${i}`).classList.remove('active');
+            }
+        }
+
+        function animateReel(reelIndex) {
+            return new Promise(resolve => {
+                const strip = document.getElementById(`strip-${reelIndex}`);
+                const extra = 25 + (reelIndex * 5);
+                for(let k = 0; k < extra; k++) addSymbolToReel(reelIndex, getRandomSymbol(), true);
+                const newResult = [];
+                for(let k = 0; k < 5; k++) { const sym = getRandomSymbol(); newResult.unshift(sym); addSymbolToReel(reelIndex, sym, true); }
+                reelData[reelIndex] = newResult;
+                strip.style.transition = 'none';
+                strip.style.transform = `translateY(-${(extra + 5) * 80 + 40}px)`; /* Adjusted for 80px */
+                strip.offsetHeight;
+                strip.style.transition = `transform ${1.8 + (reelIndex * 0.2)}s cubic-bezier(0.45, 0.05, 0.55, 0.95)`;
+                strip.style.transform = 'translateY(-40px)';
+                setTimeout(() => { while (strip.children.length > 5) strip.lastChild.remove(); resolve(); }, 1800 + (reelIndex * 200));
+            });
+        }
+
+        function calculateWins(isNudge = false) {
+            clearWinHighlights();
+            let totalWin = 0;
+            const wins = [];
+            WIN_LINES.forEach((line) => {
+                const symsInLine = line.map((row, reel) => reelData[reel][row + 1].value);
+                let ltrCount = 1, ltrSym = symsInLine[0];
+                for(let i = 1; i < 5; i++) { if (symsInLine[i] === ltrSym) ltrCount++; else break; }
+                const ltrPayout = (PAYOUTS[ltrSym] && PAYOUTS[ltrSym][ltrCount - 1]) || 0;
+                let rtlCount = 1, rtlSym = symsInLine[4];
+                for(let i = 3; i >= 0; i--) { if (symsInLine[i] === rtlSym) rtlCount++; else break; }
+                const rtlPayout = (PAYOUTS[rtlSym] && PAYOUTS[rtlSym][rtlCount - 1]) || 0;
+                if (ltrPayout >= rtlPayout && ltrPayout > 0) { totalWin += ltrPayout; wins.push({line, count: ltrCount, side: 'left'}); } 
+                else if (rtlPayout > ltrPayout && rtlPayout > 0) { totalWin += rtlPayout; wins.push({line, count: rtlCount, side: 'right'}); }
+            });
+            if (totalWin > 0) { balance += totalWin; showWins(wins, totalWin, isNudge); } 
+            else document.getElementById('message-display').innerText = isNudge ? "NO WIN" : "TRY AGAIN";
+        }
+
+        function clearWinHighlights() {
+            document.querySelectorAll('.symbol').forEach(s => s.classList.remove('win-highlight'));
+            document.getElementById('win-overlay').innerHTML = '';
+        }
+
+        function showWins(wins, amount, isNudge) {
+            document.getElementById('message-display').innerHTML = `<span class="text-[var(--teal-light)] font-bold">${isNudge ? 'NUDGE WIN' : 'WINNER'}</span> <span class="ml-2">${amount.toFixed(2)}</span>`;
+            const overlay = document.getElementById('win-overlay');
+            const grid = document.getElementById('reels-grid');
+            const rect = grid.getBoundingClientRect();
+            overlay.setAttribute("width", rect.width);
+            overlay.setAttribute("height", rect.height);
+            overlay.setAttribute("viewBox", `0 0 ${rect.width} ${rect.height}`);
+            wins.forEach(win => {
+                const points = [];
+                for (let i = 0; i < win.count; i++) {
+                    const reelIdx = win.side === 'left' ? i : (4 - i);
+                    const rowIdx = win.line[reelIdx];
+                    const strip = document.getElementById(`strip-${reelIdx}`);
+                    if (strip && strip.children[rowIdx + 1]) strip.children[rowIdx + 1].classList.add('win-highlight');
+                    const reelWindow = document.getElementById(`reel-${reelIdx}`);
+                    const winRect = reelWindow.getBoundingClientRect();
+                    const x = (winRect.left - rect.left) + (winRect.width / 2);
+                    const y = reelWindow.offsetTop + 40 + (rowIdx * 80) + 40; /* Adjusted for 80px */
+                    points.push(`${x},${y}`);
+                }
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                path.setAttribute("d", `M ${points.join(' L ')}`);
+                path.setAttribute("class", "win-line-path");
+                overlay.appendChild(path);
+            });
+        }
+
+        function endGame() {
+            document.getElementById('final-stats').innerText = `${balance.toFixed(2)}`;
+            document.getElementById('game-over-modal').classList.remove('hidden');
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
