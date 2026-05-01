@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Fruit Fight</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap');
+
+        :root {
+            --nav-bg: #002D47;
+            --teal-primary: #54D8A8;
+            --teal-mid: #65DCB1;
+            --teal-light: #76E0B9;
+            --win-teal: #54D8A8;
+            --gold: #ffd700; 
+            --sym-size: 80px; /* Reduced from 100px */
+            --peek-size: 40px; /* Reduced from 50px */
+        }
+
+        html { overflow-x: hidden; }
+
+        body {
+            background-color: #001a2d;
+            background-image: radial-gradient(circle at center, var(--nav-bg) 0%, #000c1a 100%);
+            font-family: 'Roboto', sans-serif;
+            color: white;
+            overflow-x: hidden;
+            overflow-y: auto;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            min-height: 100vh;
+            min-height: 100dvh;
+            margin: 0;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            padding-left: env(safe-area-inset-left, 0px);
+            padding-right: env(safe-area-inset-right, 0px);
+            box-sizing: border-box;
+        }
+
+        .casino-title {
+            font-family: 'Bungee', cursive;
+            color: var(--teal-light);
+            text-shadow: 0 0 10px rgba(84, 216, 168, 0.5), 2px 2px 0px #000;
+            letter-spacing: 2px;
+        }
+
+        /* Compact Cabinet */
+        .slot-bezel {
+            background: rgba(0, 45, 71, 0.8);
+            border: 2px solid var(--teal-primary);
+            border-radius: 20px;
+            box-shadow: 0 0 40px rgba(84, 216, 168, 0.15), 0 15px 40px rgba(0, 0, 0, 0.8);
+            position: relative;
+            backdrop-filter: blur(10px);
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .reels-area-wrapper {
+            position: relative;
+            padding: 5px 0;
+        }
+
+        .reel-window {
+            height: 320px; /* (80 * 3) + 40 + 40 */
+            overflow: hidden;
+            background: #000;
+            border: 2px solid #00365c;
+            border-radius: 8px;
+            position: relative;
+            box-shadow: inset 0 0 40px #000;
+        }
+
+        .reel-window::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(180deg, 
+                rgba(0,0,0,0.8) 0%, 
+                rgba(0,0,0,0.1) 15%, 
+                rgba(0,0,0,0) 25%, 
+                rgba(0,0,0,0) 75%, 
+                rgba(0,0,0,0.1) 85%, 
+                rgba(0,0,0,0.8) 100%);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .reel-strip {
+            transition: transform 0.3s ease-out;
+            display: flex;
+            flex-direction: column;
+            transform: translateY(calc(var(--peek-size) * -1));
+        }
+
+        .symbol {
+            height: var(--sym-size);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            user-select: none;
+            padding: 5px;
+            flex-shrink: 0;
+            transition: opacity 0.3s;
+        }
+
+        .reel-strip .symbol:first-child,
+        .reel-strip .symbol:last-child {
+            opacity: 0.82;
+            filter: none;
+        }
+
+        .symbol svg {
+            width: 60px;
+            height: 60px;
+            filter: drop-shadow(0 3px 5px rgba(0,0,0,0.6));
+        }
+
+        .sleek-btn {
+            background: rgba(0, 45, 71, 0.6);
+            border: 1px solid var(--teal-primary);
+            border-radius: 8px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--teal-primary);
+            font-weight: 600;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .sleek-btn:hover:not(:disabled) {
+            background: var(--teal-primary);
+            color: #002D47;
+        }
+
+        .sleek-btn:disabled {
+            opacity: 0.15;
+            cursor: not-allowed;
+        }
+
+        .nudge-btn { height: 44px; min-height: 44px; font-size: 0.6rem; width: 100%; z-index: 50; }
+        .hold-btn { height: 44px; min-height: 44px; font-size: 0.7rem; margin-top: 6px; z-index: 50; }
+
+        @media (max-width: 640px) {
+            :root {
+                --sym-size: 52px;
+                --peek-size: 26px;
+            }
+            .reel-window { height: 208px; } /* (52*3) + 26 + 26 */
+            .symbol svg { width: 38px; height: 38px; }
+            /* Keep touch targets at 44px minimum on mobile */
+            .nudge-btn { height: 44px; min-height: 44px; font-size: 0.55rem; }
+            .hold-btn { height: 44px; min-height: 44px; font-size: 0.6rem; margin-top: 3px; }
+            #reels-grid { gap: 4px; }
+        }
+
+        /* Landscape on narrow phones */
+        @media (max-height: 500px) and (orientation: landscape) {
+            :root {
+                --sym-size: 44px;
+                --peek-size: 22px;
+            }
+            .reel-window { height: 176px; } /* (44*3) + 22 + 22 */
+            .symbol svg { width: 32px; height: 32px; }
+            .symbol { font-size: 1.8rem; }
+            .nudge-btn { height: 36px; min-height: 36px; font-size: 0.5rem; }
+            .hold-btn { height: 36px; min-height: 36px; font-size: 0.55rem; margin-top: 2px; }
+            #reels-grid { gap: 3px; }
+            .slot-bezel { border-radius: 12px; }
+            /* Shrink header in landscape */
+            .casino-title { font-size: 1.4rem !important; }
+            .display-panel .text-xl { font-size: 0.9rem; }
+        }
+
+        .hold-btn.active {
+            background: var(--teal-primary);
+            color: #002D47;
+            box-shadow: 0 0 15px var(--teal-primary);
+        }
+
+        .reel-window.held {
+            border-color: var(--teal-primary);
+            box-shadow: inset 0 0 25px rgba(84, 216, 168, 0.25), 0 0 12px rgba(84, 216, 168, 0.4);
+        }
+
+        .display-panel {
+            background: rgba(0, 12, 20, 0.8);
+            border: 1px solid rgba(84, 216, 168, 0.2);
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            color: var(--teal-light);
+            text-shadow: 0 0 5px rgba(118, 224, 185, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .win-highlight {
+            animation: pulse-win 0.5s infinite;
+            background: rgba(84, 216, 168, 0.15);
+            box-shadow: inset 0 0 20px var(--teal-primary);
+            border-radius: 12px;
+            opacity: 1 !important;
+            filter: none !important;
+        }
+
+        #pay-modal svg { width: 28px; height: 28px; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.5)); }
+
+        #win-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 45;
+        }
+
+        .win-line-path {
+            fill: none;
+            stroke: var(--teal-primary);
+            stroke-width: 3;
+            stroke-linecap: round;
+            filter: drop-shadow(0 0 5px var(--teal-primary));
+            stroke-dasharray: 2000;
+            stroke-dashoffset: 2000;
+            animation: drawLine 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes drawLine { to { stroke-dashoffset: 0; } }
+        @keyframes pulse-win { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+
+        .spin-btn-main {
+            background: linear-gradient(135deg, var(--teal-primary) 0%, #2e8b6b 100%);
+            border: none;
+            box-shadow: 0 5px 15px rgba(84, 216, 168, 0.3);
+            font-family: 'Bungee', cursive;
+            color: #002D47 !important;
+            border-radius: 15px;
+            min-height: 44px;
+        }
+
+        .info-modal-content {
+            background: #001a2d;
+            border: 2px solid var(--teal-primary);
+            max-width: 450px;
+            width: 90%;
+            border-radius: 20px;
+        }
+
+        .header-btn--gold { color: var(--gold); border-color: var(--gold); }
+
+        /* Reel columns must not overflow their grid cell */
+        .reel-col { min-width: 0; overflow: hidden; }
+        .reel-container { min-width: 0; width: 100%; }
+
+        /* Game shell — centres the whole UI, max width on desktop */
+        .game-shell {
+            width: 100%;
+            max-width: 640px;
+            min-height: 100dvh;
+            padding: 8px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: space-between;
+            gap: 6px;
+        }
+
+        /* Shared stat text styles */
+        .stat-label { font-size: 0.5rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Orbitron', sans-serif; }
+        .stat-value { font-size: 1rem; font-weight: 700; line-height: 1.2; }
+
+        /* Console row */
+        .console-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 8px 12px;
+            gap: 8px;
+        }
+        .message-text {
+            font-size: 0.75rem;
+            font-weight: 300;
+            color: #99f6e4;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            flex: 1;
+            min-width: 0;
+        }
+        .spin-btn-size { padding: 10px 28px; font-size: 1.25rem; flex-shrink: 0; }
+
+        /* Utility button row */
+        .utility-btn { min-height: 36px; font-size: 0.6rem; padding: 6px 4px; }
+
+        @media (min-width: 480px) {
+            .game-shell { padding: 12px; }
+            .stat-value { font-size: 1.1rem; }
+            .spin-btn-size { padding: 12px 36px; font-size: 1.5rem; }
+            .message-text { font-size: 0.875rem; }
+            .utility-btn { min-height: 40px; font-size: 0.7rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-shell">
+
+        <!-- Title -->
+        <h1 class="casino-title text-center uppercase italic text-3xl sm:text-5xl leading-none mb-2">Fruit Fight</h1>
+
+        <!-- Score + Stats combined bar -->
+        <div class="grid grid-cols-6 gap-1.5 w-full">
+            <div class="display-panel p-1.5 text-center col-span-2">
+                <div class="stat-label">Score</div>
+                <div id="score-display" class="stat-value">0</div>
+            </div>
+            <div class="display-panel p-1.5 text-center">
+                <div class="stat-label">Spins</div>
+                <div id="spins" class="stat-value">15</div>
+            </div>
+            <div class="display-panel p-1.5 text-center">
+                <div class="stat-label">Nudges</div>
+                <div id="nudges" class="stat-value" style="color:var(--teal-mid)">8</div>
+            </div>
+            <div class="display-panel p-1.5 text-center">
+                <div class="stat-label">Holds</div>
+                <div id="holds" class="stat-value" style="color:var(--teal-light)">8</div>
+            </div>
+            <div class="display-panel p-1.5 text-center">
+                <div class="stat-label">Time</div>
+                <div id="timer-display" class="stat-value">0:00</div>
+            </div>
+        </div>
+
+        <!-- Machine Bezel -->
+        <div class="slot-bezel p-2 sm:p-3 w-full">
+            <div class="reels-area-wrapper">
+                <svg id="win-overlay"></svg>
+                <div class="grid grid-cols-5 gap-1.5 sm:gap-2 relative" id="reels-grid">
+                    <template id="reel-template">
+                        <div class="flex flex-col items-center reel-container">
+                            <button class="sleek-btn nudge-btn nudge-up">▲</button>
+                            <div class="reel-window w-full mt-1.5 mb-1.5">
+                                <div class="reel-strip"></div>
+                            </div>
+                            <button class="sleek-btn nudge-btn nudge-down">▼</button>
+                            <button class="sleek-btn hold-btn w-full uppercase">HOLD</button>
+                        </div>
+                    </template>
+                    <div id="reel-0-container" class="reel-col"></div>
+                    <div id="reel-1-container" class="reel-col"></div>
+                    <div id="reel-2-container" class="reel-col"></div>
+                    <div id="reel-3-container" class="reel-col"></div>
+                    <div id="reel-4-container" class="reel-col"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Console -->
+        <div class="console-bar mt-2 w-full">
+            <div id="message-display" class="message-text">Ready</div>
+            <button id="spin-btn" onclick="spin()" class="spin-btn-main sleek-btn spin-btn-size uppercase">Spin</button>
+        </div>
+
+        <!-- Utility buttons -->
+        <div class="flex gap-2 w-full mt-2">
+            <button onclick="toggleModal('help-modal')" class="sleek-btn utility-btn flex-1">Rules</button>
+            <button onclick="toggleModal('pay-modal')" class="sleek-btn utility-btn header-btn--gold flex-1">Paytable</button>
+            <button onclick="openHistory()" class="sleek-btn utility-btn flex-1">History</button>
+            <div class="display-panel p-1.5 text-center flex-1">
+                <div class="stat-label">Best</div>
+                <div id="high-score-display" class="stat-value" style="color:var(--gold)">0</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modals -->
+    <div id="help-modal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[100] hidden p-4 backdrop-blur-xl">
+        <div class="info-modal-content overflow-hidden border-teal-500/50">
+            <div class="bg-teal-900/20 p-4 flex justify-between items-center">
+                <h3 class="font-bold text-lg uppercase Orbitron text-[var(--teal-light)] tracking-widest">Rules</h3>
+                <button onclick="toggleModal('help-modal')" class="text-3xl font-light hover:text-teal-300">&times;</button>
+            </div>
+            <div class="p-6 space-y-4 text-gray-300 text-sm leading-relaxed">
+                <p>Match identical fruits along 5 lines. Pays <span class="text-teal-400 font-bold">BOTH WAYS</span>.</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-3 bg-black/20 rounded-xl border border-white/5">
+                        <div class="text-teal-400 font-bold text-xs">NUDGES</div>
+                        <p class="text-[10px]">Shift reels up/down after a spin.</p>
+                    </div>
+                    <div class="p-3 bg-black/20 rounded-xl border border-white/5">
+                        <div class="text-teal-400 font-bold text-xs">HOLDS</div>
+                        <p class="text-[10px]">Lock reels for next spin. Costs 1 Hold.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="pay-modal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[100] hidden p-4 backdrop-blur-xl">
+        <div class="info-modal-content overflow-hidden border-teal-500/50">
+            <div class="bg-teal-900/20 p-4 flex justify-between items-center">
+                <h3 class="font-bold text-lg uppercase Orbitron text-[var(--teal-light)] tracking-widest">Paytable</h3>
+                <button onclick="toggleModal('pay-modal')" class="text-3xl font-light">&times;</button>
+            </div>
+            <div class="p-6 space-y-2">
+                <div class="grid grid-cols-5 font-bold text-teal-400/50 text-[10px] uppercase border-b border-white/10 pb-1">
+                    <div>Fruit</div><div>2x</div><div>3x</div><div>4x</div><div>5x</div>
+                </div>
+                <div class="grid grid-cols-5 font-bold text-white text-xs items-center">
+                    <div id="pay-seven" class="text-yellow-500"></div><div class="text-teal-400/30">—</div><div>20</div><div>100</div><div class="text-lg text-yellow-400">500</div>
+                </div>
+                <div class="grid grid-cols-5 text-gray-300 text-xs items-center"><div id="pay-melon"></div><div class="text-teal-400/30">—</div><div>10</div><div>40</div><div>200</div></div>
+                <div class="grid grid-cols-5 text-gray-300 text-xs items-center"><div id="pay-grape"></div><div class="text-teal-400/30">—</div><div>5</div><div>20</div><div>100</div></div>
+                <div class="grid grid-cols-5 text-gray-300 text-xs items-center"><div id="pay-orange"></div><div class="text-teal-400/30">—</div><div>2</div><div>10</div><div>50</div></div>
+                <div class="grid grid-cols-5 text-gray-300 text-xs items-center"><div id="pay-cherry"></div><div>1</div><div>5</div><div>20</div><div>80</div></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-over-modal" class="fixed inset-0 bg-black/98 flex items-center justify-center z-[100] hidden p-4 backdrop-blur-2xl">
+        <!-- P1 view -->
+        <div id="go-p1" class="text-center max-w-sm w-full">
+            <h2 class="text-5xl casino-title mb-2 uppercase">Done</h2>
+            <p class="text-teal-400/50 text-xs uppercase tracking-widest mb-6">Your score</p>
+            <div id="final-score" class="display-panel p-8 text-5xl font-bold mb-6">0</div>
+            <button onclick="copyChallenge()" id="challenge-btn" class="spin-btn-main sleek-btn px-10 py-4 text-lg w-full mb-3">Copy Challenge Link</button>
+            <button onclick="location.href=location.pathname" class="sleek-btn px-10 py-3 text-sm w-full">Play Again</button>
+        </div>
+        <!-- P2 view -->
+        <div id="go-p2" class="text-center max-w-sm w-full hidden">
+            <h2 class="text-5xl casino-title mb-6 uppercase">Result</h2>
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="display-panel p-4 text-center">
+                    <div class="text-[10px] opacity-60 uppercase mb-1">Them</div>
+                    <div id="result-p1" class="text-3xl font-bold"></div>
+                </div>
+                <div class="display-panel p-4 text-center">
+                    <div class="text-[10px] opacity-60 uppercase mb-1">You</div>
+                    <div id="result-p2" class="text-3xl font-bold"></div>
+                </div>
+            </div>
+            <div id="result-verdict" class="text-4xl font-bold mb-6 casino-title"></div>
+            <button onclick="location.href=location.pathname" class="spin-btn-main sleek-btn px-10 py-4 text-lg w-full">New Game</button>
+        </div>
+    </div>
+
+    <div id="challenge-modal" class="fixed inset-0 bg-black/98 flex items-center justify-center z-[100] hidden p-4 backdrop-blur-2xl">
+        <div class="text-center max-w-sm">
+            <h2 class="text-5xl casino-title mb-4 uppercase">Challenge</h2>
+            <p class="text-teal-300 mb-2">Your opponent has played.</p>
+            <p class="text-teal-400/60 text-sm mb-8">Don't peek — beat their score first.</p>
+            <button onclick="acceptChallenge()" class="spin-btn-main sleek-btn px-10 py-4 text-lg w-full uppercase">Play</button>
+        </div>
+    </div>
+
+    <div id="expired-modal" class="fixed inset-0 bg-black/98 flex items-center justify-center z-[100] hidden p-4 backdrop-blur-2xl">
+        <div class="text-center max-w-sm">
+            <h2 class="text-5xl casino-title mb-4 uppercase">Expired</h2>
+            <p class="text-teal-300 mb-8">This challenge has expired (72 hours).</p>
+            <button onclick="location.href=location.pathname" class="spin-btn-main sleek-btn px-10 py-4 text-lg w-full uppercase">New Game</button>
+        </div>
+    </div>
+
+    <div id="history-modal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[100] hidden p-4 backdrop-blur-xl">
+        <div class="info-modal-content overflow-hidden border-teal-500/50 flex flex-col" style="max-height:80vh;max-width:500px;width:90%">
+            <div class="bg-teal-900/20 p-4 flex justify-between items-center">
+                <h3 class="font-bold text-lg uppercase text-[var(--teal-light)] tracking-widest">History</h3>
+                <button onclick="toggleModal('history-modal')" class="text-3xl font-light hover:text-teal-300">&times;</button>
+            </div>
+            <div id="history-stats" class="grid grid-cols-3 gap-2 p-4 border-b border-white/10"></div>
+            <div class="overflow-y-auto p-4">
+                <table class="w-full">
+                    <thead>
+                        <tr class="text-[10px] uppercase text-teal-400/50 border-b border-white/10">
+                            <th class="text-left py-2 pr-4 font-normal">Date</th>
+                            <th class="text-left py-2 pr-4 font-normal">Score</th>
+                            <th class="text-left py-2 font-normal">Mode</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const FF_KEY = 'ff_stats';
+
+        function loadStats() {
+            return JSON.parse(localStorage.getItem(FF_KEY) || '{"highScore":0,"gamesPlayed":0,"totalScore":0,"history":[]}');
+        }
+
+        function saveGame(finalScore, isChallengeMode, won) {
+            const stats = loadStats();
+            if (finalScore > stats.highScore) stats.highScore = finalScore;
+            stats.gamesPlayed++;
+            stats.totalScore += finalScore;
+            stats.history.unshift({ score: finalScore, date: Date.now(), isChallenge: isChallengeMode, won });
+            stats.history = stats.history.slice(0, 20);
+            localStorage.setItem(FF_KEY, JSON.stringify(stats));
+            updateHighScoreDisplay();
+        }
+
+        function updateHighScoreDisplay() {
+            const stats = loadStats();
+            document.getElementById('high-score-display').innerText = stats.highScore;
+        }
+
+        function openHistory() {
+            const stats = loadStats();
+            const avg = stats.gamesPlayed > 0 ? Math.round(stats.totalScore / stats.gamesPlayed) : 0;
+            document.getElementById('history-stats').innerHTML = `
+                <div class="display-panel p-2 text-center">
+                    <div class="text-[8px] opacity-60 uppercase">Games</div>
+                    <div class="font-bold">${stats.gamesPlayed}</div>
+                </div>
+                <div class="display-panel p-2 text-center">
+                    <div class="text-[8px] opacity-60 uppercase">Best</div>
+                    <div class="font-bold" style="color:var(--gold)">${stats.highScore}</div>
+                </div>
+                <div class="display-panel p-2 text-center">
+                    <div class="text-[8px] opacity-60 uppercase">Avg</div>
+                    <div class="font-bold">${avg}</div>
+                </div>`;
+            const tbody = document.getElementById('history-tbody');
+            tbody.innerHTML = '';
+            if (stats.history.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center opacity-40 py-6 text-xs">No games yet</td></tr>';
+            } else {
+                stats.history.forEach(g => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b border-white/5 text-xs';
+                    const date = new Date(g.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+                    const result = g.isChallenge
+                        ? (g.won === true ? ' <span class="text-[var(--teal-light)]">WIN</span>' : g.won === false ? ' <span class="text-red-400">LOSS</span>' : ' <span class="opacity-40">DRAW</span>')
+                        : '';
+                    const mode = g.isChallenge ? 'Challenge' + result : 'Solo';
+                    tr.innerHTML = `<td class="py-2 pr-4 opacity-50">${date}</td><td class="py-2 pr-4 font-bold" style="font-family:'Orbitron',sans-serif">${g.score}</td><td class="py-2">${mode}</td>`;
+                    tbody.appendChild(tr);
+                });
+            }
+            toggleModal('history-modal');
+        }
+
+        // Seeded PRNG (mulberry32)
+        function mulberry32(seed) {
+            return function() {
+                seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+                let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+                t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            };
+        }
+
+        const MATCH_TTL = 72 * 60 * 60 * 1000;
+        let matchSeed = 0;
+        let rng = Math.random;
+        let isChallenge = false;
+        let p1Score = null;
+        let spinOutcomes = [];   // [spinIdx][reelIdx][5 symbols]
+        let spinCounts = [0,0,0,0,0]; // how many times each reel has spun
+        let nudgePool = [];
+        let nudgeIdx = 0;
+
+        const SVG_SEVEN = `
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="thinGold" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#b8860b" /><stop offset="50%" stop-color="#ffd700" /><stop offset="100%" stop-color="#b8860b" /></linearGradient>
+                <linearGradient id="deepRed" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ff1a1a" /><stop offset="50%" stop-color="#990000" /><stop offset="100%" stop-color="#660000" /></linearGradient>
+                <filter id="gentleBevel" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur in="SourceAlpha" stdDeviation="1" result="blur" /><feSpecularLighting in="blur" surfaceScale="3" specularConstant="0.8" specularExponent="30" lighting-color="white" result="spec"><fePointLight x="-20" y="-30" z="50" /></feSpecularLighting><feComposite in="spec" in2="SourceAlpha" operator="in" /><feMerge><feMergeNode in="SourceGraphic" /><feMergeNode /></feMerge></filter>
+            </defs>
+            <path d="M12 25 L88 25 L45 92 L22 92 L68 37 L12 37 Z" fill="url(#thinGold)" stroke="#2a1f08" stroke-width="0.5"/>
+            <path d="M15 28 L85 28 L47 89 L27 89 L65 35 L15 35 Z" fill="url(#deepRed)" filter="url(#gentleBevel)" />
+            <path d="M15 28 L85 28 L83 29 L17 29 Z" fill="white" fill-opacity="0.3" />
+        </svg>`;
+
+        const SVG_CHERRY = `
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <radialGradient id="ch_r" cx="35%" cy="30%" r="66%">
+                    <stop offset="0%" stop-color="#ff7575"/>
+                    <stop offset="45%" stop-color="#cc0000"/>
+                    <stop offset="100%" stop-color="#6b0000"/>
+                </radialGradient>
+            </defs>
+            <path d="M 30 58 Q 38 42 50 28" stroke="#2d6e1e" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <path d="M 70 58 Q 62 42 50 28" stroke="#2d6e1e" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <path d="M 50 28 L 50 14" stroke="#2d6e1e" stroke-width="4" stroke-linecap="round"/>
+            <path d="M 50 18 C 65 6 82 16 74 28 C 62 34 50 18 50 18 Z" fill="#3aab2a"/>
+            <circle cx="30" cy="74" r="18" fill="url(#ch_r)"/>
+            <ellipse cx="24" cy="66" rx="6" ry="4" fill="rgba(255,255,255,0.28)" transform="rotate(-30 24 66)"/>
+            <circle cx="70" cy="74" r="18" fill="url(#ch_r)"/>
+            <ellipse cx="64" cy="66" rx="6" ry="4" fill="rgba(255,255,255,0.28)" transform="rotate(-30 64 66)"/>
+        </svg>`;
+
+        const SVG_WATERMELON = `
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <radialGradient id="wm_f" cx="50%" cy="50%" r="70%">
+                    <stop offset="0%" stop-color="#ff8080"/>
+                    <stop offset="50%" stop-color="#e01111"/>
+                    <stop offset="100%" stop-color="#8a0000"/>
+                </radialGradient>
+                <linearGradient id="wm_r" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#5cc450"/>
+                    <stop offset="100%" stop-color="#1a5e14"/>
+                </linearGradient>
+            </defs>
+            <path d="M 8 65 A 42 42 0 0 1 92 65 L 50 95 Z" fill="url(#wm_r)"/>
+            <path d="M 14 65 A 36 36 0 0 1 86 65 L 50 92 Z" fill="#e8f5e3"/>
+            <path d="M 20 65 A 30 30 0 0 1 80 65 L 50 89 Z" fill="url(#wm_f)"/>
+            <ellipse cx="36" cy="51" rx="2.5" ry="4" fill="#1a1a1a" transform="rotate(-20 36 51)"/>
+            <ellipse cx="50" cy="44" rx="2.5" ry="4" fill="#1a1a1a"/>
+            <ellipse cx="64" cy="51" rx="2.5" ry="4" fill="#1a1a1a" transform="rotate(20 64 51)"/>
+            <ellipse cx="42" cy="61" rx="2" ry="3.5" fill="#1a1a1a" transform="rotate(-10 42 61)"/>
+            <ellipse cx="58" cy="61" rx="2" ry="3.5" fill="#1a1a1a" transform="rotate(10 58 61)"/>
+            <path d="M 26 56 Q 50 46 74 56" stroke="rgba(255,255,255,0.28)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        </svg>`;
+
+        const SVG_GRAPE = `
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <radialGradient id="gr_g" cx="35%" cy="28%" r="68%">
+                    <stop offset="0%" stop-color="#d096f0"/>
+                    <stop offset="50%" stop-color="#7c22cc"/>
+                    <stop offset="100%" stop-color="#3b0870"/>
+                </radialGradient>
+            </defs>
+            <path d="M 50 15 L 50 27" stroke="#6b4226" stroke-width="3.5" stroke-linecap="round"/>
+            <path d="M 50 22 C 62 11 76 18 68 29 C 58 34 50 22 50 22 Z" fill="#3aab2a"/>
+            <path d="M 50 22 C 38 13 24 20 32 31 C 42 36 50 22 50 22 Z" fill="#2d9020"/>
+            <circle cx="41" cy="43" r="11" fill="url(#gr_g)"/>
+            <circle cx="59" cy="43" r="11" fill="url(#gr_g)"/>
+            <circle cx="30" cy="60" r="11" fill="url(#gr_g)"/>
+            <circle cx="50" cy="60" r="11" fill="url(#gr_g)"/>
+            <circle cx="70" cy="60" r="11" fill="url(#gr_g)"/>
+            <circle cx="41" cy="76" r="11" fill="url(#gr_g)"/>
+            <circle cx="59" cy="76" r="11" fill="url(#gr_g)"/>
+            <circle cx="50" cy="90" r="10" fill="url(#gr_g)"/>
+            <circle cx="36" cy="38" r="3.5" fill="rgba(255,255,255,0.35)"/>
+            <circle cx="54" cy="38" r="3.5" fill="rgba(255,255,255,0.35)"/>
+            <circle cx="25" cy="55" r="3.5" fill="rgba(255,255,255,0.35)"/>
+            <circle cx="45" cy="55" r="3.5" fill="rgba(255,255,255,0.35)"/>
+            <circle cx="65" cy="55" r="3.5" fill="rgba(255,255,255,0.35)"/>
+            <circle cx="36" cy="71" r="3.5" fill="rgba(255,255,255,0.35)"/>
+            <circle cx="54" cy="71" r="3.5" fill="rgba(255,255,255,0.35)"/>
+            <circle cx="45" cy="86" r="3" fill="rgba(255,255,255,0.35)"/>
+        </svg>`;
+
+        const SVG_ORANGE = `
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <radialGradient id="or_b" cx="38%" cy="33%" r="65%">
+                    <stop offset="0%" stop-color="#ffe066"/>
+                    <stop offset="40%" stop-color="#ff9800"/>
+                    <stop offset="100%" stop-color="#bf5000"/>
+                </radialGradient>
+            </defs>
+            <rect x="47" y="10" width="6" height="14" rx="3" fill="#5c3a1e"/>
+            <path d="M 50 18 C 65 6 82 14 74 28 C 62 36 50 18 50 18 Z" fill="#3aab2a"/>
+            <circle cx="50" cy="62" r="35" fill="url(#or_b)"/>
+            <line x1="50" y1="27" x2="50" y2="97" stroke="rgba(170,80,0,0.18)" stroke-width="1.5"/>
+            <line x1="50" y1="27" x2="50" y2="97" stroke="rgba(170,80,0,0.18)" stroke-width="1.5" transform="rotate(60 50 62)"/>
+            <line x1="50" y1="27" x2="50" y2="97" stroke="rgba(170,80,0,0.18)" stroke-width="1.5" transform="rotate(120 50 62)"/>
+            <circle cx="50" cy="62" r="7" fill="none" stroke="rgba(150,70,0,0.28)" stroke-width="2"/>
+            <circle cx="50" cy="62" r="3.5" fill="rgba(150,70,0,0.22)"/>
+            <ellipse cx="37" cy="48" rx="9" ry="6.5" fill="rgba(255,255,255,0.28)" transform="rotate(-25 37 48)"/>
+        </svg>`;
+
+        const SYMBOLS = [
+            { icon: SVG_SEVEN, value: 'seven', weight: 4 },
+            { icon: SVG_WATERMELON, value: 'watermelon', weight: 8 },
+            { icon: SVG_GRAPE, value: 'grape', weight: 14 },
+            { icon: SVG_ORANGE, value: 'orange', weight: 22 },
+            { icon: SVG_CHERRY, value: 'cherry', weight: 32 }
+        ];
+
+        const PAYOUTS = {
+            seven: [0, 0, 20, 100, 500],
+            watermelon: [0, 0, 10, 40, 200],
+            grape: [0, 0, 5, 20, 100],
+            orange: [0, 0, 2, 10, 50],
+            cherry: [0, 1, 5, 20, 80]
+        };
+
+        const WIN_LINES = [
+            [1, 1, 1, 1, 1], [0, 0, 0, 0, 0], [2, 2, 2, 2, 2], [0, 1, 2, 1, 0], [2, 1, 0, 1, 2]
+        ];
+
+        let score = 0;
+        let spinsLeft = 15;
+        let nudgesLeft = 8;
+        let holdsLeft = 8;
+        let isSpinning = false;
+        let hasSpunOnce = false;
+        let timerInterval = null;
+        let timerSeconds = 0;
+        let reelData = [[], [], [], [], []];
+        let heldReels = [false, false, false, false, false];
+
+        function init() {
+            score = 0; spinsLeft = 15; nudgesLeft = 8; holdsLeft = 8;
+            isSpinning = false; hasSpunOnce = false;
+            timerSeconds = 0;
+            clearInterval(timerInterval);
+            timerInterval = null;
+            document.getElementById('timer-display').innerText = '0:00';
+            reelData = [[], [], [], [], []];
+            heldReels = [false, false, false, false, false];
+            spinCounts = [0, 0, 0, 0, 0];
+            nudgeIdx = 0;
+
+            const template = document.getElementById('reel-template');
+            for (let i = 0; i < 5; i++) {
+                const container = document.getElementById(`reel-${i}-container`);
+                // Clear any existing content from a previous game
+                container.innerHTML = '';
+                const clone = template.content.cloneNode(true);
+                clone.querySelector('.reel-window').id = `reel-${i}`;
+                clone.querySelector('.reel-strip').id = `strip-${i}`;
+                const hBtn = clone.querySelector('.hold-btn');
+                hBtn.id = `hold-${i}`;
+                hBtn.onclick = () => toggleHold(i);
+                clone.querySelector('.nudge-up').onclick = () => nudge(i, -1);
+                clone.querySelector('.nudge-down').onclick = () => nudge(i, 1);
+                container.appendChild(clone);
+                reelData[i] = [];
+                for (let j = 0; j < 5; j++) {
+                    const symbol = getVisualSymbol();
+                    reelData[i].push(symbol);
+                    addSymbolToReel(i, symbol, false);
+                }
+            }
+            [['pay-seven',SVG_SEVEN],['pay-melon',SVG_WATERMELON],['pay-grape',SVG_GRAPE],['pay-orange',SVG_ORANGE],['pay-cherry',SVG_CHERRY]]
+                .forEach(([id, svg]) => document.getElementById(id).innerHTML = svg);
+            updateUI();
+        }
+
+        function isModalOpen() {
+            return ['help-modal','pay-modal','game-over-modal','challenge-modal','expired-modal','history-modal']
+                .some(id => !document.getElementById(id).classList.contains('hidden'));
+        }
+
+        function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
+
+        // Seeded — only used during pregenerate()
+        function getRandomSymbol() {
+            const totalWeight = SYMBOLS.reduce((sum, s) => sum + s.weight, 0);
+            let r = rng() * totalWeight;
+            for (const s of SYMBOLS) { if (r < s.weight) return s; r -= s.weight; }
+            return SYMBOLS[SYMBOLS.length - 1];
+        }
+
+        // Unseeded — used only for visual animation filler
+        function getVisualSymbol() {
+            const totalWeight = SYMBOLS.reduce((sum, s) => sum + s.weight, 0);
+            let r = Math.random() * totalWeight;
+            for (const s of SYMBOLS) { if (r < s.weight) return s; r -= s.weight; }
+            return SYMBOLS[SYMBOLS.length - 1];
+        }
+
+        function pregenerate() {
+            spinOutcomes = Array.from({length: 15}, () =>
+                Array.from({length: 5}, () =>
+                    Array.from({length: 5}, () => getRandomSymbol())
+                )
+            );
+            nudgePool = Array.from({length: 40}, () => getRandomSymbol());
+        }
+
+        function addSymbolToReel(reelIndex, symbol, prepend = false) {
+            const strip = document.getElementById(`strip-${reelIndex}`);
+            const div = document.createElement('div');
+            div.className = 'symbol';
+            div.innerHTML = symbol.icon;
+            div.dataset.value = symbol.value;
+            if (prepend) strip.prepend(div); else strip.appendChild(div);
+        }
+
+        function updateUI() {
+            document.getElementById('score-display').innerText = score;
+            document.getElementById('spins').innerText = spinsLeft;
+            document.getElementById('nudges').innerText = nudgesLeft;
+            document.getElementById('holds').innerText = holdsLeft;
+            const activeCount = heldReels.filter(h => h).length;
+            document.querySelectorAll('.nudge-btn').forEach(btn => btn.disabled = !hasSpunOnce || nudgesLeft <= 0 || isSpinning);
+            document.querySelectorAll('.hold-btn').forEach((btn, idx) => {
+                const isAlreadyActive = heldReels[idx];
+                btn.disabled = !hasSpunOnce || isSpinning || (activeCount >= holdsLeft && !isAlreadyActive) || (holdsLeft <= 0 && !isAlreadyActive);
+            });
+            document.getElementById('spin-btn').disabled = isSpinning || spinsLeft <= 0;
+        }
+
+        function toggleHold(reelIndex) {
+            if (!hasSpunOnce || isSpinning) return;
+            const activeCount = heldReels.filter(h => h).length;
+            if (!heldReels[reelIndex]) { if (activeCount < holdsLeft) heldReels[reelIndex] = true; } 
+            else heldReels[reelIndex] = false;
+            document.getElementById(`reel-${reelIndex}`).classList.toggle('held', heldReels[reelIndex]);
+            document.getElementById(`hold-${reelIndex}`).classList.toggle('active', heldReels[reelIndex]);
+            updateUI();
+        }
+
+        function nudge(reelIndex, direction) {
+            if (!hasSpunOnce || nudgesLeft <= 0 || isSpinning) return;
+            nudgesLeft--;
+            isSpinning = true;
+            updateUI();
+            const strip = document.getElementById(`strip-${reelIndex}`);
+            const newSym = nudgePool[nudgeIdx++ % nudgePool.length];
+            strip.style.transition = 'transform 0.3s ease-out';
+            strip.style.transform = `translateY(${direction === 1 ? 40 : -120}px)`;
+            setTimeout(() => {
+                strip.style.transition = 'none';
+                if (direction === 1) {
+                    strip.lastChild.remove();
+                    addSymbolToReel(reelIndex, newSym, true);
+                    reelData[reelIndex] = [newSym, ...reelData[reelIndex].slice(0, 4)];
+                } else {
+                    strip.firstChild.remove();
+                    addSymbolToReel(reelIndex, newSym, false);
+                    reelData[reelIndex] = [...reelData[reelIndex].slice(1), newSym];
+                }
+                strip.style.transform = 'translateY(-40px)';
+                strip.offsetHeight;
+                strip.style.transition = 'transform 0.3s ease-out';
+                isSpinning = false;
+                updateUI();
+                calculateWins(true);
+            }, 320);
+        }
+
+        async function spin() {
+            if (isSpinning || spinsLeft <= 0) return;
+            const holdCount = heldReels.filter(h => h).length;
+            if (holdCount > holdsLeft) return;
+            isSpinning = true;
+            if (!hasSpunOnce) {
+                timerInterval = setInterval(() => {
+                    timerSeconds++;
+                    const m = Math.floor(timerSeconds / 60);
+                    const s = timerSeconds % 60;
+                    document.getElementById('timer-display').innerText = `${m}:${s.toString().padStart(2,'0')}`;
+                }, 1000);
+            }
+            hasSpunOnce = true;
+            spinsLeft--;
+            holdsLeft -= holdCount;
+            clearWinHighlights();
+            updateUI();
+            document.getElementById('message-display').innerText = "SPINNING";
+            const promises = [];
+            for (let i = 0; i < 5; i++) { if (!heldReels[i]) promises.push(animateReel(i)); }
+            await Promise.all(promises);
+            resetHolds();
+            isSpinning = false;
+            calculateWins();
+            updateUI();
+            if (spinsLeft <= 0) setTimeout(endGame, 1800);
+        }
+
+        function resetHolds() {
+            for (let i = 0; i < 5; i++) {
+                heldReels[i] = false;
+                document.getElementById(`reel-${i}`).classList.remove('held');
+                document.getElementById(`hold-${i}`).classList.remove('active');
+            }
+        }
+
+        function animateReel(reelIndex) {
+            return new Promise(resolve => {
+                const strip = document.getElementById(`strip-${reelIndex}`);
+                const extra = 25 + (reelIndex * 5);
+                // Visual filler — unseeded, animation only
+                for(let k = 0; k < extra; k++) addSymbolToReel(reelIndex, getVisualSymbol(), true);
+                // Seeded result from pre-generated pool
+                const spinIdx = Math.min(spinCounts[reelIndex], 14);
+                spinCounts[reelIndex]++;
+                const outcome = spinOutcomes[spinIdx][reelIndex]; // [topPeek, topVis, center, botVis, botPeek]
+                reelData[reelIndex] = [...outcome];
+                // Prepend in reverse so final strip order matches reelData order
+                for(let j = outcome.length - 1; j >= 0; j--) addSymbolToReel(reelIndex, outcome[j], true);
+                strip.style.transition = 'none';
+                strip.style.transform = `translateY(-${(extra + 5) * 80 + 40}px)`;
+                strip.offsetHeight;
+                strip.style.transition = `transform ${1.8 + (reelIndex * 0.2)}s cubic-bezier(0.45, 0.05, 0.55, 0.95)`;
+                strip.style.transform = 'translateY(-40px)';
+                setTimeout(() => { while (strip.children.length > 5) strip.lastChild.remove(); resolve(); }, 1800 + (reelIndex * 200));
+            });
+        }
+
+        function calculateWins(isNudge = false) {
+            clearWinHighlights();
+            let totalWin = 0;
+            const wins = [];
+            WIN_LINES.forEach((line) => {
+                const symsInLine = line.map((row, reel) => reelData[reel][row + 1].value);
+                let ltrCount = 1, ltrSym = symsInLine[0];
+                for(let i = 1; i < 5; i++) { if (symsInLine[i] === ltrSym) ltrCount++; else break; }
+                const ltrPayout = (PAYOUTS[ltrSym] && PAYOUTS[ltrSym][ltrCount - 1]) || 0;
+                let rtlCount = 1, rtlSym = symsInLine[4];
+                for(let i = 3; i >= 0; i--) { if (symsInLine[i] === rtlSym) rtlCount++; else break; }
+                const rtlPayout = (PAYOUTS[rtlSym] && PAYOUTS[rtlSym][rtlCount - 1]) || 0;
+                if (ltrPayout > 0) { totalWin += ltrPayout; wins.push({line, count: ltrCount, side: 'left'}); }
+                if (rtlPayout > 0) { totalWin += rtlPayout; wins.push({line, count: rtlCount, side: 'right'}); }
+            });
+            if (totalWin > 0) { score += totalWin; showWins(wins, totalWin, isNudge); }
+            else document.getElementById('message-display').innerText = isNudge ? "NO WIN" : "TRY AGAIN";
+        }
+
+        function clearWinHighlights() {
+            document.querySelectorAll('.symbol').forEach(s => s.classList.remove('win-highlight'));
+            document.getElementById('win-overlay').innerHTML = '';
+        }
+
+        function showWins(wins, amount, isNudge) {
+            document.getElementById('message-display').innerHTML = `<span class="text-[var(--teal-light)] font-bold">${isNudge ? 'NUDGE WIN' : 'WINNER'}</span> <span class="ml-2">+${amount}</span>`;
+            const overlay = document.getElementById('win-overlay');
+            const grid = document.getElementById('reels-grid');
+            const rect = grid.getBoundingClientRect();
+            overlay.setAttribute("width", rect.width);
+            overlay.setAttribute("height", rect.height);
+            overlay.setAttribute("viewBox", `0 0 ${rect.width} ${rect.height}`);
+            const cs = getComputedStyle(document.documentElement);
+            const symSize = parseInt(cs.getPropertyValue('--sym-size')) || 80;
+            const peekSize = parseInt(cs.getPropertyValue('--peek-size')) || 40;
+            wins.forEach(win => {
+                const points = [];
+                for (let i = 0; i < win.count; i++) {
+                    const reelIdx = win.side === 'left' ? i : (4 - i);
+                    const rowIdx = win.line[reelIdx];
+                    const strip = document.getElementById(`strip-${reelIdx}`);
+                    if (strip && strip.children[rowIdx + 1]) strip.children[rowIdx + 1].classList.add('win-highlight');
+                    const reelWindow = document.getElementById(`reel-${reelIdx}`);
+                    const winRect = reelWindow.getBoundingClientRect();
+                    const x = (winRect.left - rect.left) + (winRect.width / 2);
+                    const y = (winRect.top - rect.top) + peekSize + (rowIdx * symSize) + peekSize;
+                    points.push(`${x},${y}`);
+                }
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                path.setAttribute("d", `M ${points.join(' L ')}`);
+                path.setAttribute("class", "win-line-path");
+                overlay.appendChild(path);
+            });
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            document.getElementById('game-over-modal').classList.remove('hidden');
+            if (isChallenge) {
+                document.getElementById('go-p1').classList.add('hidden');
+                document.getElementById('go-p2').classList.remove('hidden');
+                document.getElementById('result-p1').innerText = p1Score;
+                document.getElementById('result-p2').innerText = score;
+                const won = score > p1Score, tied = score === p1Score;
+                const verdict = document.getElementById('result-verdict');
+                verdict.innerText = tied ? 'DRAW' : won ? 'YOU WIN' : 'YOU LOSE';
+                verdict.style.color = tied ? 'var(--teal-light)' : won ? 'var(--gold)' : '#ff4444';
+                saveGame(score, true, tied ? null : won);
+            } else {
+                document.getElementById('final-score').innerText = score;
+                saveGame(score, false, null);
+            }
+        }
+
+        function copyChallenge() {
+            const payload = btoa(JSON.stringify({ seed: matchSeed, score, ts: Date.now() }));
+            const url = `${location.origin}${location.pathname}#m=${payload}`;
+            navigator.clipboard.writeText(url).then(() => {
+                const btn = document.getElementById('challenge-btn');
+                btn.innerText = 'Copied!';
+                setTimeout(() => btn.innerText = 'Copy Challenge Link', 2000);
+            });
+        }
+
+        function initMatch() {
+            const hash = location.hash;
+            if (hash.startsWith('#m=')) {
+                try {
+                    const data = JSON.parse(atob(hash.slice(3)));
+                    if (Date.now() - data.ts > MATCH_TTL) {
+                        document.getElementById('expired-modal').classList.remove('hidden');
+                        document.getElementById('spin-btn').disabled = true;
+                        return;
+                    }
+                    p1Score = data.score;
+                    matchSeed = data.seed;
+                    isChallenge = true;
+                    document.getElementById('challenge-modal').classList.remove('hidden');
+                } catch(e) { startFresh(); }
+            } else {
+                startFresh();
+            }
+        }
+
+        function startFresh() {
+            matchSeed = (Date.now() ^ (Math.random() * 0xFFFFFFFF | 0)) >>> 0;
+            rng = mulberry32(matchSeed);
+            pregenerate();
+            init();
+            updateHighScoreDisplay();
+        }
+
+        function acceptChallenge() {
+            document.getElementById('challenge-modal').classList.add('hidden');
+            rng = mulberry32(matchSeed);
+            pregenerate();
+            init();
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (!isModalOpen()) spin();
+            }
+        });
+
+        window.onload = initMatch;
+    </script>
+</body>
+</html>
