@@ -392,7 +392,7 @@
                 <button class="start-menu-btn" onclick="showStartPanel('settings')"><span>Settings</span><span class="ml-auto text-base opacity-40 font-sans">›</span></button>
             </div>
             <p style="font-size:10px; text-transform:uppercase; letter-spacing:0.35em; color:var(--color-primary); opacity:0.6; text-align:center; padding:12px 0; border-top: 1px solid var(--color-shadow);">
-                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.906
+                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.907
             </p>
         </div>
 
@@ -437,7 +437,7 @@
     </div>
 
     <!-- ─── GAME CONTAINER ─── -->
-    <div id="game-container" class="hidden w-full h-full">
+    <div id="game-container" class="hidden w-full">
 
     <div class="game-shell">
 
@@ -674,7 +674,9 @@
         const FF_KEY = 'ff_stats';
 
         function loadStats() {
-            return JSON.parse(localStorage.getItem(FF_KEY) || '{"highScore":0,"gamesPlayed":0,"totalScore":0,"history":[]}');
+            try {
+                return JSON.parse(localStorage.getItem(FF_KEY)) || { highScore: 0, gamesPlayed: 0, totalScore: 0, history: [] };
+            } catch { return { highScore: 0, gamesPlayed: 0, totalScore: 0, history: [] }; }
         }
 
         function saveGame(finalScore, isChallengeMode, won) {
@@ -685,6 +687,8 @@
             stats.history.unshift({ score: finalScore, date: Date.now(), isChallenge: isChallengeMode, won });
             stats.history = stats.history.slice(0, 20);
             localStorage.setItem(FF_KEY, JSON.stringify(stats));
+            // Also write to the start-menu high scores list so the High Scores panel reflects real games
+            saveScore(finalScore, isChallengeMode ? 'Challenge' : 'Solo');
             updateHighScoreDisplay();
         }
 
@@ -918,6 +922,8 @@
         }
 
         function isModalOpen() {
+            const startOverlay = document.getElementById('start-overlay');
+            if (startOverlay && !startOverlay.classList.contains('hidden')) return true;
             return ['help-modal','pay-modal','game-over-modal','challenge-modal','expired-modal','history-modal']
                 .some(id => !document.getElementById(id).classList.contains('hidden'));
         }
@@ -964,11 +970,14 @@
             document.getElementById('nudges').innerText = nudgesLeft;
             document.getElementById('holds').innerText = holdsLeft;
             const activeCount = heldReels.filter(h => h).length;
-            document.querySelectorAll('.nudge-btn').forEach(btn => btn.disabled = !hasSpunOnce || nudgesLeft <= 0 || isSpinning);
-            document.querySelectorAll('.hold-btn').forEach((btn, idx) => {
-                const isAlreadyActive = heldReels[idx];
-                btn.disabled = !hasSpunOnce || isSpinning || (activeCount >= holdsLeft && !isAlreadyActive) || (holdsLeft <= 0 && !isAlreadyActive);
-            });
+            const reelsGrid = document.getElementById('reels-grid');
+            if (reelsGrid) {
+                reelsGrid.querySelectorAll('.nudge-btn').forEach(btn => btn.disabled = !hasSpunOnce || nudgesLeft <= 0 || isSpinning);
+                reelsGrid.querySelectorAll('.hold-btn').forEach((btn, idx) => {
+                    const isAlreadyActive = heldReels[idx];
+                    btn.disabled = !hasSpunOnce || isSpinning || (activeCount >= holdsLeft && !isAlreadyActive) || (holdsLeft <= 0 && !isAlreadyActive);
+                });
+            }
             document.getElementById('spin-btn').disabled = isSpinning || spinsLeft <= 0;
         }
 
@@ -989,8 +998,12 @@
             updateUI();
             const strip = document.getElementById(`strip-${reelIndex}`);
             const newSym = nudgePool[nudgeIdx++ % nudgePool.length];
+            const cs = getComputedStyle(document.documentElement);
+            const symSize = parseInt(cs.getPropertyValue('--sym-size')) || 80;
+            const peekSize = parseInt(cs.getPropertyValue('--peek-size')) || 40;
             strip.style.transition = 'transform 0.3s ease-out';
-            strip.style.transform = `translateY(${direction === 1 ? 40 : -120}px)`;
+            // down (+1): strip slides down by peekSize; up (-1): strip slides up by symSize+peekSize
+            strip.style.transform = `translateY(${direction === 1 ? peekSize : -(symSize + peekSize)}px)`;
             setTimeout(() => {
                 strip.style.transition = 'none';
                 if (direction === 1) {
@@ -1002,7 +1015,7 @@
                     addSymbolToReel(reelIndex, newSym, false);
                     reelData[reelIndex] = [...reelData[reelIndex].slice(1), newSym];
                 }
-                strip.style.transform = 'translateY(-40px)';
+                strip.style.transform = `translateY(${-peekSize}px)`;
                 strip.offsetHeight;
                 strip.style.transition = 'transform 0.3s ease-out';
                 isSpinning = false;
@@ -1043,6 +1056,9 @@
         function animateReel(reelIndex) {
             return new Promise(resolve => {
                 const strip = document.getElementById(`strip-${reelIndex}`);
+                const cs = getComputedStyle(document.documentElement);
+                const symSize = parseInt(cs.getPropertyValue('--sym-size')) || 80;
+                const peekSize = parseInt(cs.getPropertyValue('--peek-size')) || 40;
                 const extra = 25 + (reelIndex * 5);
                 // Visual filler — unseeded, animation only
                 for(let k = 0; k < extra; k++) addSymbolToReel(reelIndex, getVisualSymbol(), true);
@@ -1054,10 +1070,10 @@
                 // Prepend in reverse so final strip order matches reelData order
                 for(let j = outcome.length - 1; j >= 0; j--) addSymbolToReel(reelIndex, outcome[j], true);
                 strip.style.transition = 'none';
-                strip.style.transform = `translateY(-${(extra + 5) * 80 + 40}px)`;
+                strip.style.transform = `translateY(-${(extra + 5) * symSize + peekSize}px)`;
                 strip.offsetHeight;
                 strip.style.transition = `transform ${1.8 + (reelIndex * 0.2)}s cubic-bezier(0.45, 0.05, 0.55, 0.95)`;
-                strip.style.transform = 'translateY(-40px)';
+                strip.style.transform = `translateY(${-peekSize}px)`;
                 setTimeout(() => { while (strip.children.length > 5) strip.lastChild.remove(); resolve(); }, 1800 + (reelIndex * 200));
             });
         }
@@ -1089,11 +1105,12 @@
         function showWins(wins, amount, isNudge) {
             document.getElementById('message-display').innerHTML = `<span class="text-[var(--teal-light)] font-bold">${isNudge ? 'NUDGE WIN' : 'WINNER'}</span> <span class="ml-2">+${amount}</span>`;
             const overlay = document.getElementById('win-overlay');
-            const grid = document.getElementById('reels-grid');
-            const rect = grid.getBoundingClientRect();
-            overlay.setAttribute("width", rect.width);
-            overlay.setAttribute("height", rect.height);
-            overlay.setAttribute("viewBox", `0 0 ${rect.width} ${rect.height}`);
+            // Use the overlay element's own bounding rect as the coordinate origin
+            // (it is absolutely positioned inside .reels-area-wrapper)
+            const overlayRect = overlay.getBoundingClientRect();
+            overlay.setAttribute("width", overlayRect.width);
+            overlay.setAttribute("height", overlayRect.height);
+            overlay.setAttribute("viewBox", `0 0 ${overlayRect.width} ${overlayRect.height}`);
             const cs = getComputedStyle(document.documentElement);
             const symSize = parseInt(cs.getPropertyValue('--sym-size')) || 80;
             const peekSize = parseInt(cs.getPropertyValue('--peek-size')) || 40;
@@ -1106,8 +1123,8 @@
                     if (strip && strip.children[rowIdx + 1]) strip.children[rowIdx + 1].classList.add('win-highlight');
                     const reelWindow = document.getElementById(`reel-${reelIdx}`);
                     const winRect = reelWindow.getBoundingClientRect();
-                    const x = (winRect.left - rect.left) + (winRect.width / 2);
-                    const y = (winRect.top - rect.top) + peekSize + (rowIdx * symSize) + peekSize;
+                    const x = (winRect.left - overlayRect.left) + (winRect.width / 2);
+                    const y = (winRect.top - overlayRect.top) + peekSize + (rowIdx * symSize) + (symSize / 2);
                     points.push(`${x},${y}`);
                 }
                 const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -1150,6 +1167,8 @@
             if (hash.startsWith('#m=')) {
                 try {
                     const data = JSON.parse(atob(hash.slice(3)));
+                    // Always build the game DOM first so the page is never blank
+                    startFresh();
                     if (Date.now() - data.ts > MATCH_TTL) {
                         document.getElementById('expired-modal').classList.remove('hidden');
                         document.getElementById('spin-btn').disabled = true;
