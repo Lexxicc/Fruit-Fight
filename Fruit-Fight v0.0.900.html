@@ -219,6 +219,10 @@
                     <div class="text-[8px] opacity-60 uppercase tracking-tighter">Score</div>
                     <div id="score-display" class="text-xl font-bold tracking-tighter">0</div>
                 </div>
+                <div class="display-panel px-4 py-1 text-center">
+                    <div class="text-[8px] opacity-60 uppercase tracking-tighter">Best</div>
+                    <div id="high-score-display" class="text-sm font-bold tracking-tighter" style="color:var(--gold)">0</div>
+                </div>
             </div>
             
             <h1 class="text-4xl md:text-6xl casino-title italic uppercase">Fruit Fight</h1>
@@ -226,6 +230,7 @@
             <div class="flex gap-2">
                 <button onclick="toggleModal('help-modal')" class="sleek-btn px-3 py-1 text-[10px]">Rules</button>
                 <button onclick="toggleModal('pay-modal')" class="sleek-btn px-3 py-1 text-[10px]" style="color: var(--gold); border-color: var(--gold);">Paytable</button>
+                <button onclick="openHistory()" class="sleek-btn px-3 py-1 text-[10px]">History</button>
             </div>
         </div>
 
@@ -369,7 +374,87 @@
         </div>
     </div>
 
+    <div id="history-modal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[100] hidden p-4 backdrop-blur-xl">
+        <div class="info-modal-content overflow-hidden border-teal-500/50 flex flex-col" style="max-height:80vh;max-width:500px;width:90%">
+            <div class="bg-teal-900/20 p-4 flex justify-between items-center">
+                <h3 class="font-bold text-lg uppercase text-[var(--teal-light)] tracking-widest">History</h3>
+                <button onclick="toggleModal('history-modal')" class="text-3xl font-light hover:text-teal-300">&times;</button>
+            </div>
+            <div id="history-stats" class="grid grid-cols-3 gap-2 p-4 border-b border-white/10"></div>
+            <div class="overflow-y-auto p-4">
+                <table class="w-full">
+                    <thead>
+                        <tr class="text-[10px] uppercase text-teal-400/50 border-b border-white/10">
+                            <th class="text-left py-2 pr-4 font-normal">Date</th>
+                            <th class="text-left py-2 pr-4 font-normal">Score</th>
+                            <th class="text-left py-2 font-normal">Mode</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <script>
+        const FF_KEY = 'ff_stats';
+
+        function loadStats() {
+            return JSON.parse(localStorage.getItem(FF_KEY) || '{"highScore":0,"gamesPlayed":0,"totalScore":0,"history":[]}');
+        }
+
+        function saveGame(finalScore, isChallengeMode, won) {
+            const stats = loadStats();
+            if (finalScore > stats.highScore) stats.highScore = finalScore;
+            stats.gamesPlayed++;
+            stats.totalScore += finalScore;
+            stats.history.unshift({ score: finalScore, date: Date.now(), isChallenge: isChallengeMode, won });
+            stats.history = stats.history.slice(0, 20);
+            localStorage.setItem(FF_KEY, JSON.stringify(stats));
+            updateHighScoreDisplay();
+        }
+
+        function updateHighScoreDisplay() {
+            const stats = loadStats();
+            document.getElementById('high-score-display').innerText = stats.highScore;
+        }
+
+        function openHistory() {
+            const stats = loadStats();
+            const avg = stats.gamesPlayed > 0 ? Math.round(stats.totalScore / stats.gamesPlayed) : 0;
+            document.getElementById('history-stats').innerHTML = `
+                <div class="display-panel p-2 text-center">
+                    <div class="text-[8px] opacity-60 uppercase">Games</div>
+                    <div class="font-bold">${stats.gamesPlayed}</div>
+                </div>
+                <div class="display-panel p-2 text-center">
+                    <div class="text-[8px] opacity-60 uppercase">Best</div>
+                    <div class="font-bold" style="color:var(--gold)">${stats.highScore}</div>
+                </div>
+                <div class="display-panel p-2 text-center">
+                    <div class="text-[8px] opacity-60 uppercase">Avg</div>
+                    <div class="font-bold">${avg}</div>
+                </div>`;
+            const tbody = document.getElementById('history-tbody');
+            tbody.innerHTML = '';
+            if (stats.history.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center opacity-40 py-6 text-xs">No games yet</td></tr>';
+            } else {
+                stats.history.forEach(g => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b border-white/5 text-xs';
+                    const date = new Date(g.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+                    const result = g.isChallenge
+                        ? (g.won === true ? ' <span class="text-[var(--teal-light)]">WIN</span>' : g.won === false ? ' <span class="text-red-400">LOSS</span>' : ' <span class="opacity-40">DRAW</span>')
+                        : '';
+                    const mode = g.isChallenge ? 'Challenge' + result : 'Solo';
+                    tr.innerHTML = `<td class="py-2 pr-4 opacity-50">${date}</td><td class="py-2 pr-4 font-bold" style="font-family:'Orbitron',sans-serif">${g.score}</td><td class="py-2">${mode}</td>`;
+                    tbody.appendChild(tr);
+                });
+            }
+            toggleModal('history-modal');
+        }
+
         // Seeded PRNG (mulberry32)
         function mulberry32(seed) {
             return function() {
@@ -565,7 +650,7 @@
         }
 
         function isModalOpen() {
-            return ['help-modal','pay-modal','game-over-modal','challenge-modal','expired-modal']
+            return ['help-modal','pay-modal','game-over-modal','challenge-modal','expired-modal','history-modal']
                 .some(id => !document.getElementById(id).classList.contains('hidden'));
         }
 
@@ -772,8 +857,10 @@
                 const verdict = document.getElementById('result-verdict');
                 verdict.innerText = tied ? 'DRAW' : won ? 'YOU WIN' : 'YOU LOSE';
                 verdict.style.color = tied ? 'var(--teal-light)' : won ? 'var(--gold)' : '#ff4444';
+                saveGame(score, true, tied ? null : won);
             } else {
                 document.getElementById('final-score').innerText = score;
+                saveGame(score, false, null);
             }
         }
 
@@ -811,6 +898,7 @@
             rng = mulberry32(matchSeed);
             pregenerate();
             init();
+            updateHighScoreDisplay();
         }
 
         function acceptChallenge() {
