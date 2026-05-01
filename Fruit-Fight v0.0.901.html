@@ -138,6 +138,11 @@
         .nudge-btn { height: 28px; font-size: 0.6rem; width: 100%; z-index: 50; }
         .hold-btn { height: 32px; font-size: 0.7rem; margin-top: 6px; z-index: 50; }
 
+        @media (max-width: 640px) {
+            .nudge-btn { height: 20px; font-size: 0.5rem; }
+            .hold-btn { height: 22px; font-size: 0.55rem; margin-top: 3px; }
+        }
+
         .hold-btn.active {
             background: var(--teal-primary);
             color: #002D47;
@@ -209,11 +214,11 @@
         }
     </style>
 </head>
-<body class="p-2">
+<body class="p-1 sm:p-2">
 
     <div class="max-w-3xl w-full mx-auto flex flex-col items-center">
         <!-- Dashboard / Header -->
-        <div class="flex justify-between items-center w-full mb-4 px-2">
+        <div class="flex justify-between items-center w-full mb-2 sm:mb-4 px-2">
             <div class="flex flex-col gap-1">
                 <div class="display-panel px-4 py-1 text-center">
                     <div class="text-[8px] opacity-60 uppercase tracking-tighter">Score</div>
@@ -225,7 +230,7 @@
                 </div>
             </div>
             
-            <h1 class="text-4xl md:text-6xl casino-title italic uppercase">Fruit Fight</h1>
+            <h1 class="text-2xl sm:text-4xl md:text-6xl casino-title italic uppercase">Fruit Fight</h1>
 
             <div class="flex gap-2">
                 <button onclick="toggleModal('help-modal')" class="sleek-btn px-3 py-1 text-[10px]">Rules</button>
@@ -235,9 +240,9 @@
         </div>
 
         <!-- Main Machine Bezel -->
-        <div class="slot-bezel p-4">
+        <div class="slot-bezel p-2 sm:p-4">
             <!-- Compact Stats Bar -->
-            <div class="grid grid-cols-3 gap-3 mb-4">
+            <div class="grid grid-cols-3 gap-2 sm:gap-3 mb-2 sm:mb-4">
                 <div class="display-panel p-2 text-center">
                     <div class="text-[8px] opacity-60 uppercase">Spins</div>
                     <div id="spins" class="text-lg font-bold">15</div>
@@ -275,12 +280,12 @@
         </div>
 
         <!-- Console -->
-        <div class="mt-4 w-full flex items-center justify-between bg-black/30 p-4 rounded-[25px] border border-white/5 backdrop-blur-md">
-            <div id="message-display" class="text-lg font-light text-teal-200 uppercase tracking-widest">
+        <div class="mt-2 sm:mt-4 w-full flex items-center justify-between bg-black/30 p-2 sm:p-4 rounded-[25px] border border-white/5 backdrop-blur-md">
+            <div id="message-display" class="text-sm sm:text-lg font-light text-teal-200 uppercase tracking-widest">
                 Ready
             </div>
 
-            <button id="spin-btn" onclick="spin()" class="spin-btn-main sleek-btn px-12 py-4 text-2xl uppercase">
+            <button id="spin-btn" onclick="spin()" class="spin-btn-main sleek-btn px-6 py-2 text-xl sm:px-12 sm:py-4 sm:text-2xl uppercase">
                 Spin
             </button>
         </div>
@@ -910,6 +915,6 @@
 
         window.onload = initMatch;
     </script>
-    <p style="font-size:10px;text-align:center;opacity:0.4;padding:8px;letter-spacing:0.3em;text-transform:uppercase;">&copy; Tacticon Studios 2026 &mdash; v0.0.900</p>
+    <p style="font-size:10px;text-align:center;opacity:0.4;padding:8px;letter-spacing:0.3em;text-transform:uppercase;">&copy; Tacticon Studios 2026 &mdash; v0.0.901</p>
 </body>
 </html>
