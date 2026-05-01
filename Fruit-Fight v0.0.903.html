@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Fruit Fight</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -19,17 +19,26 @@
             --peek-size: 40px; /* Reduced from 50px */
         }
 
+        html { overflow-x: hidden; }
+
         body {
             background-color: #001a2d;
             background-image: radial-gradient(circle at center, var(--nav-bg) 0%, #000c1a 100%);
             font-family: 'Roboto', sans-serif;
             color: white;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
+            min-height: 100dvh;
             margin: 0;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            padding-left: env(safe-area-inset-left, 0px);
+            padding-right: env(safe-area-inset-right, 0px);
+            box-sizing: border-box;
         }
 
         .casino-title {
@@ -48,6 +57,8 @@
             position: relative;
             backdrop-filter: blur(10px);
             width: fit-content;
+            max-width: 100%;
+            box-sizing: border-box;
         }
 
         .reels-area-wrapper {
@@ -135,12 +146,39 @@
             cursor: not-allowed;
         }
 
-        .nudge-btn { height: 28px; font-size: 0.6rem; width: 100%; z-index: 50; }
-        .hold-btn { height: 32px; font-size: 0.7rem; margin-top: 6px; z-index: 50; }
+        .nudge-btn { height: 44px; min-height: 44px; font-size: 0.6rem; width: 100%; z-index: 50; }
+        .hold-btn { height: 44px; min-height: 44px; font-size: 0.7rem; margin-top: 6px; z-index: 50; }
 
         @media (max-width: 640px) {
-            .nudge-btn { height: 20px; font-size: 0.5rem; }
-            .hold-btn { height: 22px; font-size: 0.55rem; margin-top: 3px; }
+            :root {
+                --sym-size: 52px;
+                --peek-size: 26px;
+            }
+            .reel-window { height: 208px; } /* (52*3) + 26 + 26 */
+            .symbol svg { width: 38px; height: 38px; }
+            .slot-bezel { width: 100%; border-radius: 16px; }
+            /* Keep touch targets at 44px minimum on mobile */
+            .nudge-btn { height: 44px; min-height: 44px; font-size: 0.55rem; }
+            .hold-btn { height: 44px; min-height: 44px; font-size: 0.6rem; margin-top: 3px; }
+            #reels-grid { gap: 4px; }
+        }
+
+        /* Landscape on narrow phones */
+        @media (max-height: 500px) and (orientation: landscape) {
+            :root {
+                --sym-size: 44px;
+                --peek-size: 22px;
+            }
+            .reel-window { height: 176px; } /* (44*3) + 22 + 22 */
+            .symbol svg { width: 32px; height: 32px; }
+            .symbol { font-size: 1.8rem; }
+            .nudge-btn { height: 36px; min-height: 36px; font-size: 0.5rem; }
+            .hold-btn { height: 36px; min-height: 36px; font-size: 0.55rem; margin-top: 2px; }
+            #reels-grid { gap: 3px; }
+            .slot-bezel { border-radius: 12px; }
+            /* Shrink header in landscape */
+            .casino-title { font-size: 1.4rem !important; }
+            .display-panel .text-xl { font-size: 0.9rem; }
         }
 
         .hold-btn.active {
@@ -203,6 +241,7 @@
             font-family: 'Bungee', cursive;
             color: #002D47 !important;
             border-radius: 15px;
+            min-height: 44px;
         }
 
         .info-modal-content {
@@ -212,6 +251,13 @@
             width: 90%;
             border-radius: 20px;
         }
+
+        .header-btn { min-height: 44px; }
+        .header-btn--gold { color: var(--gold); border-color: var(--gold); }
+
+        /* Reel columns must not overflow their grid cell */
+        .reel-col { min-width: 0; overflow: hidden; }
+        .reel-container { min-width: 0; width: 100%; }
     </style>
 </head>
 <body class="p-1 sm:p-2">
@@ -233,9 +279,9 @@
             <h1 class="text-2xl sm:text-4xl md:text-6xl casino-title italic uppercase">Fruit Fight</h1>
 
             <div class="flex gap-2">
-                <button onclick="toggleModal('help-modal')" class="sleek-btn px-3 py-1 text-[10px]">Rules</button>
-                <button onclick="toggleModal('pay-modal')" class="sleek-btn px-3 py-1 text-[10px]" style="color: var(--gold); border-color: var(--gold);">Paytable</button>
-                <button onclick="openHistory()" class="sleek-btn px-3 py-1 text-[10px]">History</button>
+                <button onclick="toggleModal('help-modal')" class="sleek-btn header-btn px-3 text-[10px]">Rules</button>
+                <button onclick="toggleModal('pay-modal')" class="sleek-btn header-btn header-btn--gold px-3 text-[10px]">Paytable</button>
+                <button onclick="openHistory()" class="sleek-btn header-btn px-3 text-[10px]">History</button>
             </div>
         </div>
 
@@ -285,7 +331,7 @@
                 Ready
             </div>
 
-            <button id="spin-btn" onclick="spin()" class="spin-btn-main sleek-btn px-6 py-2 text-xl sm:px-12 sm:py-4 sm:text-2xl uppercase">
+            <button id="spin-btn" onclick="spin()" class="spin-btn-main sleek-btn px-6 py-3 text-xl sm:px-12 sm:py-4 sm:text-2xl uppercase">
                 Spin
             </button>
         </div>
@@ -643,12 +689,6 @@
                     addSymbolToReel(i, symbol, false);
                 }
             }
-            window.addEventListener('keydown', (e) => {
-                if (e.code === 'Space') {
-                    e.preventDefault();
-                    if (!isModalOpen()) spin();
-                }
-            });
             [['pay-seven',SVG_SEVEN],['pay-melon',SVG_WATERMELON],['pay-grape',SVG_GRAPE],['pay-orange',SVG_ORANGE],['pay-cherry',SVG_CHERRY]]
                 .forEach(([id, svg]) => document.getElementById(id).innerHTML = svg);
             updateUI();
@@ -811,8 +851,8 @@
                 let rtlCount = 1, rtlSym = symsInLine[4];
                 for(let i = 3; i >= 0; i--) { if (symsInLine[i] === rtlSym) rtlCount++; else break; }
                 const rtlPayout = (PAYOUTS[rtlSym] && PAYOUTS[rtlSym][rtlCount - 1]) || 0;
-                if (ltrPayout >= rtlPayout && ltrPayout > 0) { totalWin += ltrPayout; wins.push({line, count: ltrCount, side: 'left'}); } 
-                else if (rtlPayout > ltrPayout && rtlPayout > 0) { totalWin += rtlPayout; wins.push({line, count: rtlCount, side: 'right'}); }
+                if (ltrPayout > 0) { totalWin += ltrPayout; wins.push({line, count: ltrCount, side: 'left'}); }
+                if (rtlPayout > 0) { totalWin += rtlPayout; wins.push({line, count: rtlCount, side: 'right'}); }
             });
             if (totalWin > 0) { score += totalWin; showWins(wins, totalWin, isNudge); }
             else document.getElementById('message-display').innerText = isNudge ? "NO WIN" : "TRY AGAIN";
@@ -831,6 +871,9 @@
             overlay.setAttribute("width", rect.width);
             overlay.setAttribute("height", rect.height);
             overlay.setAttribute("viewBox", `0 0 ${rect.width} ${rect.height}`);
+            const cs = getComputedStyle(document.documentElement);
+            const symSize = parseInt(cs.getPropertyValue('--sym-size')) || 80;
+            const peekSize = parseInt(cs.getPropertyValue('--peek-size')) || 40;
             wins.forEach(win => {
                 const points = [];
                 for (let i = 0; i < win.count; i++) {
@@ -841,7 +884,7 @@
                     const reelWindow = document.getElementById(`reel-${reelIdx}`);
                     const winRect = reelWindow.getBoundingClientRect();
                     const x = (winRect.left - rect.left) + (winRect.width / 2);
-                    const y = (winRect.top - rect.top) + 40 + (rowIdx * 80) + 40;
+                    const y = (winRect.top - rect.top) + peekSize + (rowIdx * symSize) + peekSize;
                     points.push(`${x},${y}`);
                 }
                 const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -886,6 +929,7 @@
                     const data = JSON.parse(atob(hash.slice(3)));
                     if (Date.now() - data.ts > MATCH_TTL) {
                         document.getElementById('expired-modal').classList.remove('hidden');
+                        document.getElementById('spin-btn').disabled = true;
                         return;
                     }
                     p1Score = data.score;
@@ -913,8 +957,15 @@
             init();
         }
 
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (!isModalOpen()) spin();
+            }
+        });
+
         window.onload = initMatch;
     </script>
-    <p style="font-size:10px;text-align:center;opacity:0.4;padding:8px;letter-spacing:0.3em;text-transform:uppercase;">&copy; Tacticon Studios 2026 &mdash; v0.0.901</p>
+    <p style="font-size:10px;text-align:center;opacity:0.4;padding:8px;letter-spacing:0.3em;text-transform:uppercase;">&copy; Tacticon Studios 2026 &mdash; v0.0.903</p>
 </body>
 </html>
