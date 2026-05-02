@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Fight v0.0.5</title>
+    <title>Fruit Fight v0.0.6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&family=VT323&display=swap');
 
         :root {
             --nav-bg: #002D47;
@@ -314,9 +314,176 @@
             .message-text { font-size: 0.875rem; }
             .utility-btn { min-height: 40px; font-size: 0.7rem; }
         }
+        /* ─── START OVERLAY ─── */
+        .menu-scroll {
+            background: linear-gradient(180deg, #001a2d 0%, #002D47 45%, #002D47 55%, #001a2d 100%);
+            border: 6px solid #54D8A8;
+            box-shadow: 0 0 6px 2px rgba(84,216,168,0.55),
+                        0 0 28px 4px rgba(84,216,168,0.28),
+                        0 0 70px rgba(84,216,168,0.12),
+                        inset 0 0 40px rgba(0,0,0,0.45);
+            width: 640px; max-width: 92vw; max-height: 92vh;
+            overflow-y: auto; scrollbar-width: none;
+        }
+        .menu-scroll::-webkit-scrollbar { display: none; }
+        .start-menu-btn {
+            display: flex; align-items: center; gap: 12px; width: 100%;
+            padding: 14px 24px; font-family: 'VT323', monospace; font-size: 1.45rem;
+            text-transform: uppercase; letter-spacing: 0.07em; color: #76E0B9;
+            background: transparent; border: none; border-bottom: 2px solid #000c1a;
+            cursor: pointer; text-shadow: 2px 2px 0 #000c1a;
+            text-align: left; transition: background 0.12s, padding-left 0.12s;
+        }
+        .start-menu-btn:hover { background: rgba(84,216,168,0.10); color: #fff; padding-left: 28px; }
+        .start-menu-btn:last-child { border-bottom: none; }
+        .start-back-btn {
+            font-family: 'VT323', monospace; font-size: 1.1rem; text-transform: uppercase;
+            padding: 6px 14px; color: #54D8A8; background: transparent;
+            border: 4px solid #54D8A8; cursor: pointer; letter-spacing: 0.05em;
+        }
+        .start-back-btn:hover { background: #54D8A8; color: #001a2d; }
+        .subpanel-header {
+            display: flex; align-items: center; gap: 16px; padding: 16px;
+            background: #001a2d; position: sticky; top: 0; z-index: 10;
+            border-bottom: 6px solid #54D8A8;
+        }
+        .subpanel-header h2 {
+            font-size: 1.5rem; color: #76E0B9;
+            font-weight: bold; text-transform: uppercase; font-style: italic;
+        }
+        .subpanel-footer { position: sticky; bottom: 0; height: 6px; background: #001a2d; }
     </style>
 </head>
 <body>
+
+    <!-- ═══ START OVERLAY ═══ -->
+    <div id="start-overlay" class="fixed inset-0 z-[200] flex items-center justify-center" style="background:#000;">
+
+        <!-- ── MAIN ── -->
+        <div id="start-main" class="menu-scroll relative z-10">
+            <div class="text-center pt-4 pb-4 px-6" style="border-bottom:4px solid #000c1a;">
+                <div style="min-height:140px;display:flex;align-items:center;justify-content:center;">
+                    <h1 style="font-family:'Bungee',cursive;font-size:clamp(2.5rem,10vw,5rem);
+                                color:#76E0B9;text-shadow:3px 3px 0 #000c1a,0 0 20px rgba(84,216,168,0.5);
+                                text-transform:uppercase;letter-spacing:0.12em;line-height:1.1;">
+                        Fruit Fight
+                    </h1>
+                </div>
+                <div class="flex items-center justify-center gap-3 mt-2">
+                    <div class="flex-grow h-px" style="background:linear-gradient(to right,transparent,#54D8A8)"></div>
+                    <span style="font-size:1rem;color:#54D8A8;text-transform:uppercase;letter-spacing:0.4em;font-family:'VT323',monospace;">Match. Win. Fight.</span>
+                    <div class="flex-grow h-px" style="background:linear-gradient(to left,transparent,#54D8A8)"></div>
+                </div>
+            </div>
+            <div class="flex flex-col">
+                <button class="start-menu-btn" onclick="startGame()">
+                    <span>Play</span>
+                    <span class="ml-auto text-base opacity-40 font-sans">↵</span>
+                </button>
+                <button class="start-menu-btn" onclick="showStartPanel('howtoplay')">
+                    <span>How to Play</span>
+                    <span class="ml-auto text-base opacity-40 font-sans">›</span>
+                </button>
+                <button class="start-menu-btn" onclick="showStartPanel('highscores')">
+                    <span>High Scores</span>
+                    <span class="ml-auto text-base opacity-40 font-sans">›</span>
+                </button>
+                <button class="start-menu-btn" onclick="showStartPanel('patchnotes')">
+                    <span>Patch Notes</span>
+                    <span class="ml-auto text-base opacity-40 font-sans">›</span>
+                </button>
+                <button class="start-menu-btn" onclick="showStartPanel('settings')">
+                    <span>Settings</span>
+                    <span class="ml-auto text-base opacity-40 font-sans">›</span>
+                </button>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:10px 16px;opacity:0.6;">
+                <div style="flex:1;height:1px;background:linear-gradient(to right,transparent,#fff);"></div>
+                <span style="font-size:13px;text-transform:uppercase;letter-spacing:0.3em;color:#fff;white-space:nowrap;font-family:'VT323',monospace;">Tacticon Studios 2026 &middot; v0.0.6</span>
+                <div style="flex:1;height:1px;background:linear-gradient(to left,transparent,#fff);"></div>
+            </div>
+        </div>
+
+        <!-- ── HOW TO PLAY ── -->
+        <div id="start-howtoplay" class="menu-scroll hidden relative z-10">
+            <div class="subpanel-header">
+                <button class="start-back-btn" onclick="showStartPanel('main')">← Back</button>
+                <h2>How to Play</h2>
+            </div>
+            <div class="p-5 text-sm space-y-4" style="font-family:'VT323',monospace;color:#d1d5db;">
+                <div style="border:2px solid #54D8A8;padding:10px 12px;background:rgba(0,29,46,0.6)">
+                    <p style="color:#76E0B9;text-transform:uppercase;font-size:11px;letter-spacing:0.1em;font-weight:bold;margin-bottom:4px">The Basics</p>
+                    <p style="line-height:1.6">Match identical fruits along 5 lines. Lines pay <strong style="color:#54D8A8">both ways</strong> — left-to-right and right-to-left.</p>
+                </div>
+                <div>
+                    <h3 style="color:#76E0B9;text-transform:uppercase;font-weight:bold;border-bottom:1px solid #000c1a;padding-bottom:4px;margin-bottom:8px">Actions</h3>
+                    <p>• <strong style="color:#54D8A8">Spin</strong> — costs 1 spin. Timer starts on your first spin.</p>
+                    <p>• <strong style="color:#54D8A8">Hold</strong> — lock a reel before the next spin. Costs 1 Hold.</p>
+                    <p>• <strong style="color:#54D8A8">Nudge</strong> — shift a reel up or down one symbol. Free, limited supply.</p>
+                </div>
+                <div>
+                    <h3 style="color:#76E0B9;text-transform:uppercase;font-weight:bold;border-bottom:1px solid #000c1a;padding-bottom:4px;margin-bottom:8px">Ending the Game</h3>
+                    <p>• Run out of spins, or let the 3-minute timer hit zero.</p>
+                    <p>• Your final score is saved to High Scores.</p>
+                </div>
+            </div>
+            <div class="subpanel-footer"></div>
+        </div>
+
+        <!-- ── HIGH SCORES ── -->
+        <div id="start-highscores" class="menu-scroll hidden relative z-10">
+            <div class="subpanel-header">
+                <button class="start-back-btn" onclick="showStartPanel('main')">← Back</button>
+                <h2>High Scores</h2>
+            </div>
+            <div class="p-5" id="ff-highscore-list">
+                <p style="text-align:center;color:#54D8A8;opacity:0.5;font-size:0.875rem;margin-top:32px">No scores recorded yet.</p>
+            </div>
+            <div class="subpanel-footer"></div>
+        </div>
+
+        <!-- ── PATCH NOTES ── -->
+        <div id="start-patchnotes" class="menu-scroll hidden relative z-10">
+            <div class="subpanel-header">
+                <button class="start-back-btn" onclick="showStartPanel('main')">← Back</button>
+                <h2>Patch Notes</h2>
+            </div>
+            <div id="ff-patchnotes-list" class="p-5 text-sm space-y-5" style="font-family:'VT323',monospace;"></div>
+            <div class="subpanel-footer"></div>
+        </div>
+
+        <!-- ── SETTINGS ── -->
+        <div id="start-settings" class="menu-scroll hidden relative z-10">
+            <div class="subpanel-header">
+                <button class="start-back-btn" onclick="showStartPanel('main')">← Back</button>
+                <h2>Settings</h2>
+            </div>
+            <div class="p-6 space-y-6" style="font-family:'VT323',monospace;">
+                <div>
+                    <h3 style="color:#76E0B9;text-transform:uppercase;font-weight:bold;font-size:0.875rem;border-bottom:1px solid #000c1a;padding-bottom:8px;margin-bottom:16px;letter-spacing:0.1em">Audio</h3>
+                    <div class="flex items-center justify-between py-2" style="border-bottom:1px solid #000c1a">
+                        <span style="color:#d1d5db">SFX Volume</span>
+                        <div class="flex items-center gap-3">
+                            <input type="range" id="vol-slider" min="0" max="100" value="100"
+                                   oninput="updateVolume(this.value)"
+                                   style="accent-color:#54D8A8;width:120px">
+                            <span id="vol-val" style="color:#76E0B9;width:40px;text-align:right">100%</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between py-2">
+                        <span style="color:#d1d5db">Sound Effects</span>
+                        <button id="sfx-toggle" onclick="toggleSFX()"
+                                style="padding:4px 12px;text-transform:uppercase;font-weight:bold;
+                                       font-family:'VT323',monospace;border:4px solid #54D8A8;
+                                       background:#002D47;color:#76E0B9;
+                                       box-shadow:inset -2px -2px 0px #000c1a;cursor:pointer;">ON</button>
+                    </div>
+                </div>
+            </div>
+            <div class="subpanel-footer"></div>
+        </div>
+
+    </div><!-- /start-overlay -->
 
     <div class="game-shell">
 
@@ -466,7 +633,7 @@
                     <div>Fruit</div><div>2x</div><div>3x</div><div>4x</div><div>5x</div>
                 </div>
                 <div class="grid grid-cols-5 font-bold text-white text-xs items-center">
-                    <div id="pay-seven" class="text-yellow-500"></div><div class="text-teal-400/30">—</div><div>100</div><div>500</div><div class="text-lg text-yellow-400">1000</div>
+                    <div id="pay-seven" class="text-yellow-500"></div><div class="text-teal-400/30">—</div><div>50</div><div>250</div><div class="text-lg text-yellow-400">1250</div>
                 </div>
                 <div class="grid grid-cols-5 text-gray-300 text-xs items-center"><div id="pay-melon"></div><div class="text-teal-400/30">—</div><div>10</div><div>50</div><div>250</div></div>
                 <div class="grid grid-cols-5 text-gray-300 text-xs items-center"><div id="pay-grape"></div><div class="text-teal-400/30">—</div><div>5</div><div>25</div><div>125</div></div>
@@ -604,13 +771,20 @@
         }
 
         // Audio
-        let _ac = null;
+        let _ac = null, _masterGain = null, _pendingVolume = 1.0;
+        let sfxEnabled = true;
         function _getAC() {
-            if (!_ac) _ac = new (window.AudioContext || window.webkitAudioContext)();
+            if (!_ac) {
+                _ac = new (window.AudioContext || window.webkitAudioContext)();
+                _masterGain = _ac.createGain();
+                _masterGain.gain.value = _pendingVolume;
+                _masterGain.connect(_ac.destination);
+            }
             if (_ac.state === 'suspended') _ac.resume();
             return _ac;
         }
         function _tone(freq, type, vol, attack, sustain, release, delay = 0) {
+            if (!sfxEnabled) return;
             const ac = _getAC();
             const t = ac.currentTime + delay;
             const g = ac.createGain();
@@ -622,11 +796,12 @@
             o.type = type;
             o.frequency.setValueAtTime(freq, t);
             o.connect(g);
-            g.connect(ac.destination);
+            g.connect(_masterGain);
             o.start(t);
             o.stop(t + attack + sustain + release + 0.01);
         }
         function _noise(vol, dur, delay = 0) {
+            if (!sfxEnabled) return;
             const ac = _getAC();
             const frames = Math.ceil(ac.sampleRate * dur);
             const buf = ac.createBuffer(1, frames, ac.sampleRate);
@@ -639,12 +814,27 @@
             g.gain.setValueAtTime(vol, t);
             g.gain.linearRampToValueAtTime(0, t + dur);
             src.connect(g);
-            g.connect(ac.destination);
+            g.connect(_masterGain);
             src.start(t);
             src.stop(t + dur);
         }
+        let _tickInterval = null;
         const SFX = {
-            spin()    { _noise(0.07, 0.12); _tone(180, 'sawtooth', 0.08, 0.01, 0.05, 0.06); },
+            spin()    {
+                // coin-into-slot: impact burst + metallic ring
+                _noise(0.18, 0.04);
+                _tone(2200, 'sine', 0.10, 0.001, 0.003, 0.14);
+                _tone(1400, 'sine', 0.07, 0.001, 0.003, 0.12, 0.01);
+                _tone(900,  'sine', 0.04, 0.001, 0.003, 0.10, 0.025);
+            },
+            startTick() {
+                if (_tickInterval) return;
+                _tickInterval = setInterval(() => {
+                    _noise(0.025, 0.018);
+                    _tone(300, 'square', 0.018, 0.001, 0.003, 0.015);
+                }, 140);
+            },
+            stopTick() { clearInterval(_tickInterval); _tickInterval = null; },
             reel()    { _tone(260, 'square', 0.04, 0.005, 0.02, 0.02); _noise(0.04, 0.05); },
             hold()    { _tone(440, 'sine', 0.12, 0.01, 0.04, 0.06); _tone(550, 'sine', 0.08, 0.01, 0.02, 0.05, 0.05); },
             nudge()   { _tone(320, 'triangle', 0.12, 0.01, 0.03, 0.05); _tone(400, 'triangle', 0.08, 0.01, 0.02, 0.04, 0.04); },
@@ -707,7 +897,7 @@
         const SVG_WATERMELON = `
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             <defs>
-                <radialGradient id="wm_f" cx="50%" cy="30%" r="70%">
+                <radialGradient id="wm_f" cx="50%" cy="20%" r="75%">
                     <stop offset="0%" stop-color="#ff8080"/>
                     <stop offset="50%" stop-color="#e01111"/>
                     <stop offset="100%" stop-color="#8a0000"/>
@@ -717,15 +907,20 @@
                     <stop offset="100%" stop-color="#1a5e14"/>
                 </linearGradient>
             </defs>
-            <path d="M 6 8 L 94 8 A 44 80 0 0 1 6 8 Z" fill="url(#wm_r)"/>
-            <path d="M 12 14 L 88 14 A 38 72 0 0 1 12 14 Z" fill="#e8f5e3"/>
-            <path d="M 18 20 L 82 20 A 32 64 0 0 1 18 20 Z" fill="url(#wm_f)"/>
-            <ellipse cx="36" cy="52" rx="2.5" ry="4" fill="#1a1a1a" transform="rotate(-20 36 52)"/>
-            <ellipse cx="50" cy="45" rx="2.5" ry="4" fill="#1a1a1a"/>
-            <ellipse cx="64" cy="52" rx="2.5" ry="4" fill="#1a1a1a" transform="rotate(20 64 52)"/>
-            <ellipse cx="42" cy="65" rx="2" ry="3.5" fill="#1a1a1a" transform="rotate(-10 42 65)"/>
-            <ellipse cx="58" cy="65" rx="2" ry="3.5" fill="#1a1a1a" transform="rotate(10 58 65)"/>
-            <path d="M 26 35 Q 50 25 74 35" stroke="rgba(255,255,255,0.28)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <!-- Green rind — flat top, arcs down -->
+            <path d="M 6 20 L 94 20 A 44 68 0 0 1 6 20 Z" fill="url(#wm_r)"/>
+            <!-- White pith band -->
+            <path d="M 11 20 L 89 20 A 39 61 0 0 1 11 20 Z" fill="#e8f5e3"/>
+            <!-- Red flesh -->
+            <path d="M 17 20 L 83 20 A 33 53 0 0 1 17 20 Z" fill="url(#wm_f)"/>
+            <!-- Seeds -->
+            <ellipse cx="35" cy="47" rx="2.5" ry="4" fill="#1a1a1a" transform="rotate(-20 35 47)"/>
+            <ellipse cx="50" cy="42" rx="2.5" ry="4" fill="#1a1a1a"/>
+            <ellipse cx="65" cy="47" rx="2.5" ry="4" fill="#1a1a1a" transform="rotate(20 65 47)"/>
+            <ellipse cx="42" cy="60" rx="2" ry="3.5" fill="#1a1a1a" transform="rotate(-10 42 60)"/>
+            <ellipse cx="58" cy="60" rx="2" ry="3.5" fill="#1a1a1a" transform="rotate(10 58 60)"/>
+            <!-- Shine on flesh -->
+            <path d="M 25 30 Q 50 22 75 30" stroke="rgba(255,255,255,0.30)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
         </svg>`;
 
         const SVG_GRAPE = `
@@ -787,7 +982,7 @@
         ];
 
         const PAYOUTS = {
-            seven:      [0, 0, 100,  500, 1000],
+            seven:      [0, 0, 50,  250, 1250],
             watermelon: [0, 0,  10,   50,  250],
             grape:      [0, 0,   5,   25,  125],
             orange:     [0, 0, 2.5, 12.5, 62.5],
@@ -955,6 +1150,7 @@
             if (holdCount > holdsLeft) return;
             isSpinning = true;
             SFX.spin();
+            SFX.startTick();
             if (!hasSpunOnce) {
                 timerInterval = setInterval(() => {
                     timerSeconds--;
@@ -981,6 +1177,7 @@
             const promises = [];
             for (let i = 0; i < 5; i++) { if (!heldReels[i]) promises.push(animateReel(i)); }
             await Promise.all(promises);
+            SFX.stopTick();
             resetHolds();
             isSpinning = false;
             calculateWins();
@@ -1193,6 +1390,112 @@
                 if (!isModalOpen()) spin();
             }
         });
+
+        // ─── FRONT MENU ─────────────────────────────────────────────────────────
+        function escHtml(str) {
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        const PATCH_NOTES = [
+            { v:'v0.0.6', date:'2026-05', notes:[
+                'Front page with GG theme — main menu, how to play, high scores, patch notes, settings',
+                'Audio: coin-in-slot spin sound, ticking noise while reels spin',
+                'Watermelon reshaped as emoji-style semicircle slice',
+                'Sevens paytable: 3x=50, 4x=250, 5x=1250',
+            ]},
+            { v:'v0.0.5', date:'2026-04', notes:[
+                'Countdown timer (3 min) — time out ends the game',
+                'Rebalanced paytable — higher top-end payouts',
+                'Watermelon redesigned as flat-top semicircle',
+                'Larger peek window — cherry vs grape now clearly distinct',
+                'Celebratory end screen with score animation',
+            ]},
+            { v:'v0.0.4', date:'2026-04', notes:[
+                'Fixed nudge animation travelling too far (moved 2 symbols instead of 1)',
+                'Added full Web Audio sound system — spin, reel stop, hold, nudge, win, game over',
+            ]},
+            { v:'v0.0.910', date:'2026-03', notes:['Fixed score display not updating after a nudge win'] },
+            { v:'v0.0.909', date:'2026-03', notes:['Rebalanced cherry payouts (1/3/10/40 — down from 1/5/20/80)'] },
+            { v:'v0.0.908', date:'2026-03', notes:[
+                'Fixed double-counting when LTR and RTL wins overlap on same line',
+                'Fixed win highlight indexing wrong symbol after nudge',
+                'Fixed nudge-down animation truncated (now travels full symbol height)',
+                'Fixed hold buttons permanently disabled when holdsLeft reaches 0',
+                'Fixed crash when spinning before challenge is accepted',
+                'Fixed challenge link using seed 0 if copied before game initialises',
+                'Fixed nudge and hold actions firing through open modals',
+                'Fixed spin action firing through open modals',
+            ]},
+        ];
+
+        function renderFFHighScores() {
+            const el = document.getElementById('ff-highscore-list');
+            try {
+                const stats = JSON.parse(localStorage.getItem(FF_KEY) || '{}');
+                const history = (stats.history || []).slice(0, 10);
+                if (!history.length) {
+                    el.innerHTML = `<p style="text-align:center;color:#54D8A8;opacity:0.5;font-size:0.875rem;margin-top:32px">No scores recorded yet.</p>`;
+                    return;
+                }
+                const sorted = [...history].sort((a,b) => b.score - a.score);
+                el.innerHTML = sorted.map((s, i) => {
+                    const d = new Date(s.date).toLocaleDateString();
+                    const badge = s.isChallenge ? `<span style="color:#ffd700;font-size:0.7rem;margin-left:4px">[C]</span>` : '';
+                    return `<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #000c1a;font-size:0.875rem">
+                        <span style="color:#54D8A8;width:24px;text-align:right">${i+1}.</span>
+                        <span style="flex:1;color:#fff">${escHtml(String(s.score))}${badge}</span>
+                        <span style="color:#54D8A8;opacity:0.5;font-size:0.75rem">${escHtml(d)}</span>
+                    </div>`;
+                }).join('');
+            } catch(e) {
+                el.innerHTML = `<p style="text-align:center;color:#54D8A8;opacity:0.5;font-size:0.875rem;margin-top:32px">No scores recorded yet.</p>`;
+            }
+        }
+
+        function renderFFPatchNotes() {
+            const el = document.getElementById('ff-patchnotes-list');
+            el.innerHTML = PATCH_NOTES.map(p => `
+                <div>
+                    <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:4px">
+                        <span style="color:#76E0B9;font-weight:bold">${escHtml(p.v)}</span>
+                        <span style="color:#54D8A8;opacity:0.6;font-size:10px">${escHtml(p.date)}</span>
+                    </div>
+                    <ul style="margin:0;padding:0;list-style:none">
+                        ${p.notes.map(n => `<li style="color:#d1d5db">• ${escHtml(n)}</li>`).join('')}
+                    </ul>
+                </div>`).join('');
+        }
+
+        const FF_START_PANELS = ['main','howtoplay','highscores','patchnotes','settings'];
+        function showStartPanel(name, fromPopstate=false) {
+            FF_START_PANELS.forEach(p => {
+                const el = document.getElementById('start-'+p);
+                if (el) el.classList.toggle('hidden', p !== name);
+            });
+            if (name === 'highscores') renderFFHighScores();
+            if (name === 'patchnotes') renderFFPatchNotes();
+            if (!fromPopstate && name !== 'main') history.pushState({ panel: name }, document.title);
+        }
+
+        window.addEventListener('popstate', function(e) {
+            const ov = document.getElementById('start-overlay');
+            if (ov && !ov.classList.contains('hidden')) showStartPanel('main', true);
+        });
+
+        function updateVolume(val) {
+            document.getElementById('vol-val').innerText = val + '%';
+            _pendingVolume = val / 100;
+            if (_masterGain) _masterGain.gain.value = _pendingVolume;
+        }
+
+        function toggleSFX() {
+            sfxEnabled = !sfxEnabled;
+            document.getElementById('sfx-toggle').innerText = sfxEnabled ? 'ON' : 'OFF';
+        }
+
+        function startGame() {
+            document.getElementById('start-overlay').classList.add('hidden');
+        }
 
         window.onload = initMatch;
     </script>
