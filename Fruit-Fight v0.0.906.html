@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Fight</title>
+    <title>Fruit Fight v0.0.906</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap');
@@ -817,8 +817,11 @@
             updateUI();
             const strip = document.getElementById(`strip-${reelIndex}`);
             const newSym = nudgePool[nudgeIdx++ % nudgePool.length];
+            const cs = getComputedStyle(document.documentElement);
+            const symSize = parseInt(cs.getPropertyValue('--sym-size')) || 80;
+            const peekSize = parseInt(cs.getPropertyValue('--peek-size')) || 40;
             strip.style.transition = 'transform 0.3s ease-out';
-            strip.style.transform = `translateY(${direction === 1 ? 40 : -120}px)`;
+            strip.style.transform = `translateY(${direction === 1 ? peekSize : -(peekSize + symSize * 2)}px)`;
             setTimeout(() => {
                 strip.style.transition = 'none';
                 if (direction === 1) {
@@ -830,7 +833,7 @@
                     addSymbolToReel(reelIndex, newSym, false);
                     reelData[reelIndex] = [...reelData[reelIndex].slice(1), newSym];
                 }
-                strip.style.transform = 'translateY(-40px)';
+                strip.style.transform = `translateY(-${peekSize}px)`;
                 strip.offsetHeight;
                 strip.style.transition = 'transform 0.3s ease-out';
                 isSpinning = false;
@@ -890,11 +893,15 @@
                 // Prepend in reverse so final strip order matches reelData order
                 for(let j = outcome.length - 1; j >= 0; j--) addSymbolToReel(reelIndex, outcome[j], true);
                 strip.style.transition = 'none';
-                strip.style.transform = `translateY(-${(extra + 5) * 80 + 40}px)`;
+                const cs = getComputedStyle(document.documentElement);
+                const symSizePx = parseInt(cs.getPropertyValue('--sym-size')) || 80;
+                const peekSizePx = parseInt(cs.getPropertyValue('--peek-size')) || 40;
+                strip.style.transform = `translateY(-${(extra + 5) * symSizePx + peekSizePx}px)`;
                 strip.offsetHeight;
                 strip.style.transition = `transform ${1.8 + (reelIndex * 0.2)}s cubic-bezier(0.45, 0.05, 0.55, 0.95)`;
-                strip.style.transform = 'translateY(-40px)';
-                setTimeout(() => { while (strip.children.length > 5) strip.lastChild.remove(); resolve(); }, 1800 + (reelIndex * 200));
+                strip.style.transform = `translateY(-${peekSizePx}px)`;
+                const animMs = 1800 + (reelIndex * 200);
+                setTimeout(() => { while (strip.children.length > 5) strip.lastChild.remove(); resolve(); }, animMs + 150);
             });
         }
 
@@ -943,7 +950,7 @@
                     const reelWindow = document.getElementById(`reel-${reelIdx}`);
                     const winRect = reelWindow.getBoundingClientRect();
                     const x = (winRect.left - rect.left) + (winRect.width / 2);
-                    const y = (winRect.top - rect.top) + peekSize + (rowIdx * symSize) + peekSize;
+                    const y = (winRect.top - rect.top) + peekSize + (rowIdx * symSize) + (symSize / 2);
                     points.push(`${x},${y}`);
                 }
                 const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -979,6 +986,10 @@
             navigator.clipboard.writeText(url).then(() => {
                 const btn = document.getElementById('challenge-btn');
                 btn.innerText = 'Copied!';
+                setTimeout(() => btn.innerText = 'Copy Challenge Link', 2000);
+            }).catch(() => {
+                const btn = document.getElementById('challenge-btn');
+                btn.innerText = 'Copy failed';
                 setTimeout(() => btn.innerText = 'Copy Challenge Link', 2000);
             });
         }
@@ -1016,6 +1027,7 @@
             rng = mulberry32(matchSeed);
             pregenerate();
             init();
+            updateHighScoreDisplay();
         }
 
         window.addEventListener('keydown', (e) => {
