@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Fight</title>
+    <title>Fruit Fight v0.0.110</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&family=VT323&display=swap');
@@ -392,7 +392,7 @@
                 <button class="start-menu-btn" onclick="showStartPanel('settings')"><span>Settings</span><span class="ml-auto text-base opacity-40 font-sans">›</span></button>
             </div>
             <p style="font-size:10px; text-transform:uppercase; letter-spacing:0.35em; color:var(--color-primary); opacity:0.6; text-align:center; padding:12px 0; border-top: 1px solid var(--color-shadow);">
-                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.109
+                &copy; Tacticon Studios 2026 &nbsp;&mdash;&nbsp; v0.0.110
             </p>
         </div>
 
@@ -499,6 +499,7 @@
             <button onclick="toggleModal('help-modal')" class="sleek-btn utility-btn flex-1">Rules</button>
             <button onclick="toggleModal('pay-modal')" class="sleek-btn utility-btn header-btn--gold flex-1">Paytable</button>
             <button onclick="openHistory()" class="sleek-btn utility-btn flex-1">History</button>
+            <button id="mute-btn" onclick="toggleSFX()" class="sleek-btn utility-btn flex-1" style="min-width:44px;min-height:44px;" aria-label="Toggle sound">VOL ON</button>
             <div class="display-panel p-1.5 text-center flex-1">
                 <div class="stat-label">Best</div>
                 <div id="high-score-display" class="stat-value" style="color:var(--gold)">0</div>
@@ -620,8 +621,138 @@
     </div><!-- end #game-container -->
 
     <script>
+        // ─── AUDIO ENGINE ───
+        const _ac = { ctx: null };
+        function _audioCtx() {
+            if (!_ac.ctx) _ac.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            if (_ac.ctx.state === 'suspended') _ac.ctx.resume();
+            return _ac.ctx;
+        }
+        let _muted = false;
+        let _vol = 1.0; // master volume 0..1
+
+        function playTone(freq, dur, type='sine', vol=0.3, delay=0) {
+            if (_muted) return;
+            try {
+                const ctx = _audioCtx();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+                gain.gain.setValueAtTime(vol * _vol, ctx.currentTime + delay);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + dur);
+                osc.start(ctx.currentTime + delay);
+                osc.stop(ctx.currentTime + delay + dur);
+            } catch(e) {}
+        }
+
+        function playNoise(dur, vol=0.15, delay=0) {
+            if (_muted) return;
+            try {
+                const ctx = _audioCtx();
+                const bufLen = Math.ceil(ctx.sampleRate * dur);
+                const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+                const data = buf.getChannelData(0);
+                for (let i = 0; i < bufLen; i++) data[i] = Math.random() * 2 - 1;
+                const src = ctx.createBufferSource();
+                src.buffer = buf;
+                const gain = ctx.createGain();
+                src.connect(gain); gain.connect(ctx.destination);
+                gain.gain.setValueAtTime(vol * _vol, ctx.currentTime + delay);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + dur);
+                src.start(ctx.currentTime + delay);
+                src.stop(ctx.currentTime + delay + dur);
+            } catch(e) {}
+        }
+
+        function playFreqSweep(freqStart, freqEnd, dur, type='sawtooth', vol=0.2, delay=0) {
+            if (_muted) return;
+            try {
+                const ctx = _audioCtx();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.type = type;
+                osc.frequency.setValueAtTime(freqStart, ctx.currentTime + delay);
+                osc.frequency.exponentialRampToValueAtTime(freqEnd, ctx.currentTime + delay + dur);
+                gain.gain.setValueAtTime(vol * _vol, ctx.currentTime + delay);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + dur);
+                osc.start(ctx.currentTime + delay);
+                osc.stop(ctx.currentTime + delay + dur);
+            } catch(e) {}
+        }
+
+        // Individual sound effects
+        function sfxSpinStart() {
+            // Mechanical whirr: noise burst + downward frequency sweep
+            playNoise(0.12, 0.18);
+            playFreqSweep(800, 120, 0.35, 'sawtooth', 0.18);
+            playFreqSweep(600, 80, 0.35, 'square', 0.08, 0.05);
+        }
+
+        function sfxReelStop(reelIndex) {
+            // Satisfying click — short noise + pitched thud, staggered by reel
+            const delay = reelIndex * 0.0;
+            playNoise(0.04, 0.25, delay);
+            playTone(120 + reelIndex * 15, 0.12, 'sine', 0.22, delay);
+        }
+
+        function sfxSmallWin() {
+            // Coin-drop jingle: short ascending tones
+            const notes = [523, 659, 784, 1047];
+            notes.forEach((f, i) => playTone(f, 0.18, 'sine', 0.28, i * 0.10));
+        }
+
+        function sfxBigWin() {
+            // Celebratory fanfare: longer ascending sequence + sustained chord
+            const notes = [392, 523, 659, 784, 1047, 1319];
+            notes.forEach((f, i) => playTone(f, 0.25, 'sine', 0.32, i * 0.09));
+            // Harmonics on top
+            [523, 659, 784].forEach((f, i) => playTone(f, 0.5, 'triangle', 0.15, 0.6 + i * 0.05));
+            playFreqSweep(200, 400, 0.8, 'sawtooth', 0.12, 0.55);
+        }
+
+        function sfxLoss() {
+            // Descending wah-wah
+            playFreqSweep(440, 220, 0.25, 'sawtooth', 0.22);
+            playFreqSweep(360, 180, 0.25, 'sawtooth', 0.14, 0.20);
+            playTone(110, 0.3, 'sine', 0.18, 0.40);
+        }
+
+        function sfxButtonClick() {
+            // Short UI tap
+            playTone(880, 0.06, 'sine', 0.18);
+            playNoise(0.03, 0.08);
+        }
+
+        function sfxNudge() {
+            // Mechanical click + brief whirr
+            playNoise(0.04, 0.2);
+            playFreqSweep(300, 100, 0.18, 'sawtooth', 0.12);
+        }
+
+        function sfxHoldToggle(active) {
+            if (active) {
+                playTone(660, 0.08, 'sine', 0.2);
+                playTone(880, 0.08, 'sine', 0.15, 0.07);
+            } else {
+                playTone(440, 0.08, 'sine', 0.2);
+            }
+        }
+
+        // Mute toggle state — sync with the Settings toggle
+        function _syncMuteUI() {
+            const btn = document.getElementById('mute-btn');
+            if (btn) btn.textContent = _muted ? 'VOL OFF' : 'VOL ON';
+            const sfxBtn = document.getElementById('sfx-toggle');
+            if (sfxBtn) sfxBtn.innerText = _muted ? 'OFF' : 'ON';
+        }
+
         // ─── START MENU JS ───
-        const PATCH_NOTES = [];
+        const PATCH_NOTES = [
+            { v: 'v0.0.110', date: '2026-05-02', notes: ['Add basic soundscape — Web Audio synthesised sounds', 'Mute/unmute toggle added'] }
+        ];
         const HS_KEY = 'fruitfight_hs';
 
         function saveScore(score, label='') {
@@ -672,9 +803,21 @@
             }
         });
         let sfxEnabled = true;
-        function updateVolume(val) { document.getElementById('vol-val').innerText = val + '%'; }
-        function toggleSFX() { sfxEnabled = !sfxEnabled; document.getElementById('sfx-toggle').innerText = sfxEnabled ? 'ON' : 'OFF'; }
+        function updateVolume(val) {
+            document.getElementById('vol-val').innerText = val + '%';
+            _vol = val / 100;
+            if (_vol > 0 && _muted) { _muted = false; _syncMuteUI(); }
+        }
+        function toggleSFX() {
+            _muted = !_muted;
+            sfxEnabled = !_muted;
+            _syncMuteUI();
+            if (!_muted) { _audioCtx(); sfxButtonClick(); }
+        }
         function startGame() {
+            // Lazy-init AudioContext on first user gesture
+            try { _audioCtx(); } catch(e) {}
+            sfxButtonClick();
             history.pushState({ panel: 'game' }, '');
             document.getElementById('start-overlay').classList.add('hidden');
             document.getElementById('game-container').classList.remove('hidden');
@@ -939,7 +1082,7 @@
                 .some(id => !document.getElementById(id).classList.contains('hidden'));
         }
 
-        function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
+        function toggleModal(id) { sfxButtonClick(); document.getElementById(id).classList.toggle('hidden'); }
 
         // Seeded — only used during pregenerate()
         function getRandomSymbol() {
@@ -997,6 +1140,7 @@
             const activeCount = heldReels.filter(h => h).length;
             if (!heldReels[reelIndex]) { if (activeCount < holdsLeft) heldReels[reelIndex] = true; }
             else heldReels[reelIndex] = false;
+            sfxHoldToggle(heldReels[reelIndex]);
             document.getElementById(`reel-${reelIndex}`).classList.toggle('held', heldReels[reelIndex]);
             document.getElementById(`hold-${reelIndex}`).classList.toggle('active', heldReels[reelIndex]);
             updateUI();
@@ -1004,6 +1148,7 @@
 
         function nudge(reelIndex, direction) {
             if (!hasSpunOnce || nudgesLeft <= 0 || isSpinning) return;
+            sfxNudge();
             nudgesLeft--;
             isSpinning = true;
             updateUI();
@@ -1045,6 +1190,7 @@
             holdsLeft -= holdCount;
             clearWinHighlights();
             updateUI();
+            sfxSpinStart();
             document.getElementById('message-display').innerText = "SPINNING";
             const promises = [];
             for (let i = 0; i < 5; i++) { if (!heldReels[i]) promises.push(animateReel(i)); }
@@ -1085,7 +1231,7 @@
                 strip.offsetHeight;
                 strip.style.transition = `transform ${1.8 + (reelIndex * 0.2)}s cubic-bezier(0.45, 0.05, 0.55, 0.95)`;
                 strip.style.transform = `translateY(${-peekSize}px)`;
-                setTimeout(() => { while (strip.children.length > 5) strip.lastChild.remove(); resolve(); }, 1800 + (reelIndex * 200));
+                setTimeout(() => { while (strip.children.length > 5) strip.lastChild.remove(); sfxReelStop(reelIndex); resolve(); }, 1800 + (reelIndex * 200));
             });
         }
 
@@ -1104,8 +1250,16 @@
                 if (ltrPayout > 0) { totalWin += ltrPayout; wins.push({line, count: ltrCount, side: 'left'}); }
                 if (rtlPayout > 0) { totalWin += rtlPayout; wins.push({line, count: rtlCount, side: 'right'}); }
             });
-            if (totalWin > 0) { score += totalWin; showWins(wins, totalWin, isNudge); }
-            else document.getElementById('message-display').innerText = isNudge ? "NO WIN" : "TRY AGAIN";
+            if (totalWin > 0) {
+                score += totalWin;
+                // Big win threshold: 50+ points or jackpot symbol win
+                const hasBigWin = totalWin >= 50 || wins.some(w => w.line && reelData[0][w.line[0]+1] && reelData[0][w.line[0]+1].value === 'seven');
+                setTimeout(() => hasBigWin ? sfxBigWin() : sfxSmallWin(), 80);
+                showWins(wins, totalWin, isNudge);
+            } else {
+                if (!isNudge) setTimeout(() => sfxLoss(), 80);
+                document.getElementById('message-display').innerText = isNudge ? "NO WIN" : "TRY AGAIN";
+            }
         }
 
         function clearWinHighlights() {
