@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Fight v0.0.31</title>
+    <title>Fruit Fight v0.0.32</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&family=VT323&display=swap');
@@ -17,6 +17,7 @@
             --gold: #ffd700;
             --sym-size: 80px;
             --peek-size: 58px;
+            --nudge-btn-h: 44px;
         }
 
         html { overflow-x: hidden; }
@@ -111,14 +112,18 @@
 
         .reel-strip .symbol:first-child,
         .reel-strip .symbol:last-child {
-            opacity: 0.45;
+            opacity: 0.35;
             filter: none;
         }
 
-        .reel-strip .symbol:nth-child(2),
-        .reel-strip .symbol:nth-child(3),
-        .reel-strip .symbol:nth-child(4) {
-            box-shadow: inset 0 0 0 2px rgba(255, 184, 48, 0.7);
+        #active-zone-border {
+            position: absolute;
+            top: calc(var(--nudge-btn-h) + 6px + var(--peek-size));
+            height: calc(3 * var(--sym-size));
+            left: 0; right: 0;
+            border: 2px solid rgba(255, 184, 48, 0.7);
+            pointer-events: none;
+            z-index: 20;
         }
 
         .symbol svg {
@@ -172,6 +177,7 @@
             :root {
                 --sym-size: 44px;
                 --peek-size: 31px;
+                --nudge-btn-h: 36px;
             }
             .reel-window { height: 194px; } /* (44*3) + 31 + 31 */
             .symbol svg { width: 32px; height: 32px; }
@@ -405,7 +411,7 @@
             </div>
             <div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:10px 16px;opacity:0.6;">
                 <div style="flex:1;height:1px;background:linear-gradient(to right,transparent,#fff);"></div>
-                <span style="font-size:13px;text-transform:uppercase;letter-spacing:0.3em;color:#fff;white-space:nowrap;font-family:'VT323',monospace;">Tacticon Studios 2026 &middot; v0.0.31</span>
+                <span style="font-size:13px;text-transform:uppercase;letter-spacing:0.3em;color:#fff;white-space:nowrap;font-family:'VT323',monospace;">Tacticon Studios 2026 &middot; v0.0.32</span>
                 <div style="flex:1;height:1px;background:linear-gradient(to left,transparent,#fff);"></div>
             </div>
         </div>
@@ -525,6 +531,7 @@
             <div class="reels-area-wrapper">
                 <svg id="win-overlay"></svg>
                 <div class="grid grid-cols-5 gap-1.5 sm:gap-2 relative" id="reels-grid">
+                    <div id="active-zone-border"></div>
                     <template id="reel-template">
                         <div class="flex flex-col items-center reel-container">
                             <button class="sleek-btn nudge-btn nudge-up">▲</button>
@@ -1403,6 +1410,10 @@
         }
 
         const PATCH_NOTES = [
+            { v:'v0.0.32', date:'2026-05', notes:[
+                'Single stationary border encompassing all 15 active tiles',
+                'Peek symbols dimmed to 0.35 opacity',
+            ]},
             { v:'v0.0.31', date:'2026-05', notes:[
                 'Active tile borders made more visible (2px, 0.7 opacity)',
                 'Peek symbols dimmed further for clearer visual hierarchy',
