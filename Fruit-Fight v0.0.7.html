@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Fight v0.0.6</title>
+    <title>Fruit Fight v0.0.7</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&family=VT323&display=swap');
@@ -14,9 +14,9 @@
             --teal-mid: #65DCB1;
             --teal-light: #76E0B9;
             --win-teal: #54D8A8;
-            --gold: #ffd700; 
+            --gold: #ffd700;
             --sym-size: 80px;
-            --peek-size: 46px;
+            --peek-size: 58px;
         }
 
         html { overflow-x: hidden; }
@@ -66,7 +66,7 @@
         }
 
         .reel-window {
-            height: 332px; /* (80 * 3) + 46 + 46 */
+            height: 356px; /* (80 * 3) + 58 + 58 */
             overflow: hidden;
             background: #000;
             border: 2px solid #00365c;
@@ -94,7 +94,7 @@
             transition: transform 0.3s ease-out;
             display: flex;
             flex-direction: column;
-            transform: translateY(calc(var(--peek-size) * -1));
+            transform: translateY(calc(var(--peek-size) - var(--sym-size)));
         }
 
         .symbol {
@@ -113,6 +113,12 @@
         .reel-strip .symbol:last-child {
             opacity: 0.82;
             filter: none;
+        }
+
+        .reel-strip .symbol:nth-child(2),
+        .reel-strip .symbol:nth-child(3),
+        .reel-strip .symbol:nth-child(4) {
+            box-shadow: inset 0 0 0 1px rgba(84, 216, 168, 0.2);
         }
 
         .symbol svg {
@@ -151,9 +157,9 @@
         @media (max-width: 640px) {
             :root {
                 --sym-size: 52px;
-                --peek-size: 30px;
+                --peek-size: 38px;
             }
-            .reel-window { height: 216px; } /* (52*3) + 30 + 30 */
+            .reel-window { height: 232px; } /* (52*3) + 38 + 38 */
             .symbol svg { width: 38px; height: 38px; }
             /* Keep touch targets at 44px minimum on mobile */
             .nudge-btn { height: 44px; min-height: 44px; font-size: 0.55rem; }
@@ -165,9 +171,9 @@
         @media (max-height: 500px) and (orientation: landscape) {
             :root {
                 --sym-size: 44px;
-                --peek-size: 25px;
+                --peek-size: 31px;
             }
-            .reel-window { height: 182px; } /* (44*3) + 25 + 25 */
+            .reel-window { height: 194px; } /* (44*3) + 31 + 31 */
             .symbol svg { width: 32px; height: 32px; }
             .symbol { font-size: 1.8rem; }
             .nudge-btn { height: 36px; min-height: 36px; font-size: 0.5rem; }
@@ -399,7 +405,7 @@
             </div>
             <div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:10px 16px;opacity:0.6;">
                 <div style="flex:1;height:1px;background:linear-gradient(to right,transparent,#fff);"></div>
-                <span style="font-size:13px;text-transform:uppercase;letter-spacing:0.3em;color:#fff;white-space:nowrap;font-family:'VT323',monospace;">Tacticon Studios 2026 &middot; v0.0.6</span>
+                <span style="font-size:13px;text-transform:uppercase;letter-spacing:0.3em;color:#fff;white-space:nowrap;font-family:'VT323',monospace;">Tacticon Studios 2026 &middot; v0.0.7</span>
                 <div style="flex:1;height:1px;background:linear-gradient(to left,transparent,#fff);"></div>
             </div>
         </div>
@@ -1123,7 +1129,7 @@
             const symSize = parseInt(cs.getPropertyValue('--sym-size')) || 80;
             const peekSize = parseInt(cs.getPropertyValue('--peek-size')) || 40;
             strip.style.transition = 'transform 0.3s ease-out';
-            strip.style.transform = `translateY(${direction === 1 ? symSize - peekSize : -(peekSize + symSize)}px)`;
+            strip.style.transform = `translateY(${direction === 1 ? peekSize : peekSize - 2 * symSize}px)`;
             setTimeout(() => {
                 strip.style.transition = 'none';
                 if (direction === 1) {
@@ -1135,7 +1141,7 @@
                     addSymbolToReel(reelIndex, newSym, false);
                     reelData[reelIndex] = [...reelData[reelIndex].slice(1), newSym];
                 }
-                strip.style.transform = `translateY(-${peekSize}px)`;
+                strip.style.transform = `translateY(${peekSize - symSize}px)`;
                 strip.offsetHeight;
                 strip.style.transition = 'transform 0.3s ease-out';
                 isSpinning = false;
@@ -1210,10 +1216,10 @@
                 const cs = getComputedStyle(document.documentElement);
                 const symSizePx = parseInt(cs.getPropertyValue('--sym-size')) || 80;
                 const peekSizePx = parseInt(cs.getPropertyValue('--peek-size')) || 40;
-                strip.style.transform = `translateY(-${(extra + 5) * symSizePx + peekSizePx}px)`;
+                strip.style.transform = `translateY(${peekSizePx - (extra + 6) * symSizePx}px)`;
                 strip.offsetHeight;
                 strip.style.transition = `transform ${1.8 + (reelIndex * 0.2)}s cubic-bezier(0.45, 0.05, 0.55, 0.95)`;
-                strip.style.transform = `translateY(-${peekSizePx}px)`;
+                strip.style.transform = `translateY(${peekSizePx - symSizePx}px)`;
                 const animMs = 1800 + (reelIndex * 200);
                 setTimeout(() => { SFX.reel(); while (strip.children.length > 5) strip.lastChild.remove(); resolve(); }, animMs + 150);
             });
@@ -1397,6 +1403,10 @@
         }
 
         const PATCH_NOTES = [
+            { v:'v0.0.7', date:'2026-05', notes:[
+                'Symmetric peek windows — top and bottom peek now equal size',
+                'Thin border added around the 15 active symbols',
+            ]},
             { v:'v0.0.6', date:'2026-05', notes:[
                 'Front page with GG theme — main menu, how to play, high scores, patch notes, settings',
                 'Audio: coin-in-slot spin sound, ticking noise while reels spin',
