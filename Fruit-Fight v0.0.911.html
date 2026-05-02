@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Fight v0.0.910</title>
+    <title>Fruit Fight v0.0.911</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap');
@@ -402,6 +402,13 @@
                     </div>
                 </div>
                 <div class="p-3 bg-black/20 rounded-xl border border-white/5 text-[10px] text-gray-400">
+                    <div class="text-teal-400 font-bold text-xs mb-1">v0.0.911</div>
+                    <ul class="space-y-0.5 list-disc list-inside">
+                        <li>Fixed nudge animation travelling too far (moved 2 symbols instead of 1)</li>
+                        <li>Added full Web Audio sound system — spin, reel stop, hold, nudge, win, game over</li>
+                    </ul>
+                </div>
+                <div class="p-3 bg-black/20 rounded-xl border border-white/5 text-[10px] text-gray-400">
                     <div class="text-teal-400 font-bold text-xs mb-1">v0.0.910</div>
                     <ul class="space-y-0.5 list-disc list-inside">
                         <li>Fixed score display not updating after a nudge win</li>
@@ -518,7 +525,7 @@
     </div>
 
     <script>
-        (function(){ var _k='ff_wipe_v910'; if(localStorage.getItem(_k)!=='1'){ localStorage.removeItem('ff_stats'); localStorage.setItem(_k,'1'); } })();
+        (function(){ var _k='ff_wipe_v911'; if(localStorage.getItem(_k)!=='1'){ localStorage.removeItem('ff_stats'); localStorage.setItem(_k,'1'); } })();
 
         const FF_KEY = 'ff_stats';
 
@@ -577,6 +584,56 @@
             }
             toggleModal('history-modal');
         }
+
+        // Audio
+        let _ac = null;
+        function _getAC() {
+            if (!_ac) _ac = new (window.AudioContext || window.webkitAudioContext)();
+            if (_ac.state === 'suspended') _ac.resume();
+            return _ac;
+        }
+        function _tone(freq, type, vol, attack, sustain, release, delay = 0) {
+            const ac = _getAC();
+            const t = ac.currentTime + delay;
+            const g = ac.createGain();
+            g.gain.setValueAtTime(0, t);
+            g.gain.linearRampToValueAtTime(vol, t + attack);
+            g.gain.setValueAtTime(vol, t + attack + sustain);
+            g.gain.linearRampToValueAtTime(0, t + attack + sustain + release);
+            const o = ac.createOscillator();
+            o.type = type;
+            o.frequency.setValueAtTime(freq, t);
+            o.connect(g);
+            g.connect(ac.destination);
+            o.start(t);
+            o.stop(t + attack + sustain + release + 0.01);
+        }
+        function _noise(vol, dur, delay = 0) {
+            const ac = _getAC();
+            const frames = Math.ceil(ac.sampleRate * dur);
+            const buf = ac.createBuffer(1, frames, ac.sampleRate);
+            const d = buf.getChannelData(0);
+            for (let i = 0; i < frames; i++) d[i] = Math.random() * 2 - 1;
+            const src = ac.createBufferSource();
+            src.buffer = buf;
+            const g = ac.createGain();
+            const t = ac.currentTime + delay;
+            g.gain.setValueAtTime(vol, t);
+            g.gain.linearRampToValueAtTime(0, t + dur);
+            src.connect(g);
+            g.connect(ac.destination);
+            src.start(t);
+            src.stop(t + dur);
+        }
+        const SFX = {
+            spin()    { _noise(0.07, 0.12); _tone(180, 'sawtooth', 0.08, 0.01, 0.05, 0.06); },
+            reel()    { _tone(260, 'square', 0.04, 0.005, 0.02, 0.02); _noise(0.04, 0.05); },
+            hold()    { _tone(440, 'sine', 0.12, 0.01, 0.04, 0.06); _tone(550, 'sine', 0.08, 0.01, 0.02, 0.05, 0.05); },
+            nudge()   { _tone(320, 'triangle', 0.12, 0.01, 0.03, 0.05); _tone(400, 'triangle', 0.08, 0.01, 0.02, 0.04, 0.04); },
+            win()     { [0,0.1,0.2].forEach((d,i) => _tone([520,660,780][i], 'sine', 0.15, 0.01, 0.08, 0.06, d)); },
+            bigWin()  { [0,0.12,0.24,0.36].forEach((d,i) => _tone([440,550,660,880][i], 'sine', 0.18, 0.01, 0.1, 0.08, d)); },
+            gameOver(){ _tone(220, 'sawtooth', 0.15, 0.02, 0.1, 0.1); _tone(180, 'sawtooth', 0.12, 0.02, 0.1, 0.1, 0.15); _tone(140, 'sawtooth', 0.1, 0.02, 0.2, 0.15, 0.3); }
+        };
 
         // Seeded PRNG (mulberry32)
         function mulberry32(seed) {
@@ -831,8 +888,9 @@
             if (isModalOpen()) return;
             if (!hasSpunOnce || isSpinning) return;
             const activeCount = heldReels.filter(h => h).length;
-            if (!heldReels[reelIndex]) { if (activeCount < holdsLeft) heldReels[reelIndex] = true; } 
+            if (!heldReels[reelIndex]) { if (activeCount < holdsLeft) heldReels[reelIndex] = true; }
             else heldReels[reelIndex] = false;
+            if (heldReels[reelIndex]) SFX.hold();
             document.getElementById(`reel-${reelIndex}`).classList.toggle('held', heldReels[reelIndex]);
             document.getElementById(`hold-${reelIndex}`).classList.toggle('active', heldReels[reelIndex]);
             updateUI();
@@ -841,6 +899,7 @@
         function nudge(reelIndex, direction) {
             if (isModalOpen()) return;
             if (!hasSpunOnce || nudgesLeft <= 0 || isSpinning) return;
+            SFX.nudge();
             nudgesLeft--;
             isSpinning = true;
             updateUI();
@@ -850,7 +909,7 @@
             const symSize = parseInt(cs.getPropertyValue('--sym-size')) || 80;
             const peekSize = parseInt(cs.getPropertyValue('--peek-size')) || 40;
             strip.style.transition = 'transform 0.3s ease-out';
-            strip.style.transform = `translateY(${direction === 1 ? symSize + peekSize : -(peekSize + symSize * 2)}px)`;
+            strip.style.transform = `translateY(${direction === 1 ? symSize - peekSize : -(peekSize + symSize)}px)`;
             setTimeout(() => {
                 strip.style.transition = 'none';
                 if (direction === 1) {
@@ -876,6 +935,7 @@
             const holdCount = heldReels.filter(h => h).length;
             if (holdCount > holdsLeft) return;
             isSpinning = true;
+            SFX.spin();
             if (!hasSpunOnce) {
                 timerInterval = setInterval(() => {
                     timerSeconds++;
@@ -930,7 +990,7 @@
                 strip.style.transition = `transform ${1.8 + (reelIndex * 0.2)}s cubic-bezier(0.45, 0.05, 0.55, 0.95)`;
                 strip.style.transform = `translateY(-${peekSizePx}px)`;
                 const animMs = 1800 + (reelIndex * 200);
-                setTimeout(() => { while (strip.children.length > 5) strip.lastChild.remove(); resolve(); }, animMs + 150);
+                setTimeout(() => { SFX.reel(); while (strip.children.length > 5) strip.lastChild.remove(); resolve(); }, animMs + 150);
             });
         }
 
@@ -956,7 +1016,7 @@
                     if (rtlPayout > 0) { totalWin += rtlPayout; wins.push({line, count: rtlCount, side: 'right'}); }
                 }
             });
-            if (totalWin > 0) { score += totalWin; showWins(wins, totalWin, isNudge); }
+            if (totalWin > 0) { score += totalWin; (totalWin >= 500 ? SFX.bigWin : SFX.win).call(SFX); showWins(wins, totalWin, isNudge); }
             else document.getElementById('message-display').innerText = isNudge ? "NO WIN" : "TRY AGAIN";
         }
 
@@ -999,6 +1059,7 @@
         function endGame() {
             clearInterval(timerInterval);
             timerInterval = null;
+            SFX.gameOver();
             document.getElementById('game-over-modal').classList.remove('hidden');
             if (isChallenge) {
                 document.getElementById('go-p1').classList.add('hidden');
