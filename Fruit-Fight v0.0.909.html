@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Fight v0.0.908</title>
+    <title>Fruit Fight v0.0.909</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap');
@@ -402,6 +402,12 @@
                     </div>
                 </div>
                 <div class="p-3 bg-black/20 rounded-xl border border-white/5 text-[10px] text-gray-400">
+                    <div class="text-teal-400 font-bold text-xs mb-1">v0.0.909</div>
+                    <ul class="space-y-0.5 list-disc list-inside">
+                        <li>Rebalanced cherry payouts (1/3/10/40 — down from 1/5/20/80)</li>
+                    </ul>
+                </div>
+                <div class="p-3 bg-black/20 rounded-xl border border-white/5 text-[10px] text-gray-400">
                     <div class="text-teal-400 font-bold text-xs mb-1">v0.0.908</div>
                     <ul class="space-y-0.5 list-disc list-inside">
                         <li>Fixed double-counting when LTR and RTL wins overlap on same line</li>
@@ -434,7 +440,7 @@
                 <div class="grid grid-cols-5 text-gray-300 text-xs items-center"><div id="pay-melon"></div><div class="text-teal-400/30">—</div><div>10</div><div>40</div><div>200</div></div>
                 <div class="grid grid-cols-5 text-gray-300 text-xs items-center"><div id="pay-grape"></div><div class="text-teal-400/30">—</div><div>5</div><div>20</div><div>100</div></div>
                 <div class="grid grid-cols-5 text-gray-300 text-xs items-center"><div id="pay-orange"></div><div class="text-teal-400/30">—</div><div>2</div><div>10</div><div>50</div></div>
-                <div class="grid grid-cols-5 text-gray-300 text-xs items-center"><div id="pay-cherry"></div><div>1</div><div>5</div><div>20</div><div>80</div></div>
+                <div class="grid grid-cols-5 text-gray-300 text-xs items-center"><div id="pay-cherry"></div><div>1</div><div>3</div><div>10</div><div>40</div></div>
             </div>
         </div>
     </div>
@@ -506,7 +512,7 @@
     </div>
 
     <script>
-        (function(){ var _k='ff_wipe_v908'; if(localStorage.getItem(_k)!=='1'){ localStorage.removeItem('ff_stats'); localStorage.setItem(_k,'1'); } })();
+        (function(){ var _k='ff_wipe_v909'; if(localStorage.getItem(_k)!=='1'){ localStorage.removeItem('ff_stats'); localStorage.setItem(_k,'1'); } })();
 
         const FF_KEY = 'ff_stats';
 
@@ -704,7 +710,7 @@
             watermelon: [0, 0, 10, 40, 200],
             grape: [0, 0, 5, 20, 100],
             orange: [0, 0, 2, 10, 50],
-            cherry: [0, 1, 5, 20, 80]
+            cherry: [0, 1, 3, 10, 40]
         };
 
         const WIN_LINES = [
