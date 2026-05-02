@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Fight v0.0.34</title>
+    <title>Fruit Fight v0.0.35</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&family=VT323&display=swap');
@@ -27,13 +27,11 @@
             background-image: radial-gradient(circle at center, var(--nav-bg) 0%, #000c1a 100%);
             font-family: 'Roboto', sans-serif;
             color: white;
-            overflow-x: hidden;
-            overflow-y: auto;
+            overflow: hidden;
             display: flex;
-            align-items: flex-start;
-            justify-content: center;
-            min-height: 100vh;
-            min-height: 100dvh;
+            flex-direction: column;
+            align-items: center;
+            height: 100dvh;
             margin: 0;
             padding-top: env(safe-area-inset-top, 0px);
             padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -280,7 +278,9 @@
         .game-shell {
             width: 100%;
             max-width: 640px;
-            min-height: 100dvh;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
             padding: 8px;
             box-sizing: border-box;
             display: flex;
@@ -411,7 +411,7 @@
             </div>
             <div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:10px 16px;opacity:0.6;">
                 <div style="flex:1;height:1px;background:linear-gradient(to right,transparent,#fff);"></div>
-                <span style="font-size:13px;text-transform:uppercase;letter-spacing:0.3em;color:#fff;white-space:nowrap;font-family:'VT323',monospace;">Tacticon Studios 2026 &middot; v0.0.34</span>
+                <span style="font-size:13px;text-transform:uppercase;letter-spacing:0.3em;color:#fff;white-space:nowrap;font-family:'VT323',monospace;">Tacticon Studios 2026 &middot; v0.0.35</span>
                 <div style="flex:1;height:1px;background:linear-gradient(to left,transparent,#fff);"></div>
             </div>
         </div>
@@ -646,12 +646,16 @@
                     <div>Fruit</div><div>2x</div><div>3x</div><div>4x</div><div>5x</div>
                 </div>
                 <div class="grid grid-cols-5 font-bold text-white text-xs items-center">
+                    <div id="pay-dragonfruit" style="color:#ff6b8e;"></div><div class="text-teal-400/30">—</div><div style="color:#ff6b8e">500</div><div style="color:#ff6b8e">2000</div><div class="text-lg" style="color:#ff6b8e">5000</div>
+                </div>
+                <div class="text-[8px] tracking-widest" style="color:#ff6b8e;opacity:0.7;">★ WILD — substitutes for any fruit</div>
+                <div class="grid grid-cols-5 font-bold text-white text-xs items-center">
                     <div id="pay-seven" class="text-yellow-500"></div><div class="text-teal-400/30">—</div><div>50</div><div>250</div><div class="text-lg text-yellow-400">1250</div>
                 </div>
                 <div class="grid grid-cols-5 text-gray-300 text-xs items-center"><div id="pay-melon"></div><div class="text-teal-400/30">—</div><div>10</div><div>50</div><div>250</div></div>
                 <div class="grid grid-cols-5 text-gray-300 text-xs items-center"><div id="pay-grape"></div><div class="text-teal-400/30">—</div><div>5</div><div>25</div><div>125</div></div>
-                <div class="grid grid-cols-5 text-gray-300 text-xs items-center"><div id="pay-orange"></div><div class="text-teal-400/30">—</div><div>2.5</div><div>12.5</div><div>62.5</div></div>
-                <div class="grid grid-cols-5 text-gray-300 text-xs items-center"><div id="pay-cherry"></div><div>1</div><div>1.25</div><div>5.25</div><div>26.25</div></div>
+                <div class="grid grid-cols-5 text-gray-300 text-xs items-center"><div id="pay-orange"></div><div class="text-teal-400/30">—</div><div>3</div><div>13</div><div>63</div></div>
+                <div class="grid grid-cols-5 text-gray-300 text-xs items-center"><div id="pay-cherry"></div><div>1</div><div>1</div><div>5</div><div>26</div></div>
             </div>
         </div>
     </div>
@@ -723,9 +727,9 @@
     </div>
 
     <script>
-        (function(){ var _k='ff_wipe_v4'; if(localStorage.getItem(_k)!=='1'){ localStorage.removeItem('ff_stats'); localStorage.setItem(_k,'1'); } })();
+        (function(){ var _k='XFF_wipe_v5'; if(localStorage.getItem(_k)!=='1'){ localStorage.removeItem('ff_stats'); localStorage.removeItem('XFF_stats'); localStorage.setItem(_k,'1'); } })();
 
-        const FF_KEY = 'ff_stats';
+        const FF_KEY = 'XFF_stats';
 
         function loadStats() {
             return JSON.parse(localStorage.getItem(FF_KEY) || '{"highScore":0,"gamesPlayed":0,"totalScore":0,"history":[]}');
@@ -986,7 +990,37 @@
             <ellipse cx="37" cy="48" rx="9" ry="6.5" fill="rgba(255,255,255,0.28)" transform="rotate(-25 37 48)"/>
         </svg>`;
 
+        const SVG_DRAGONFRUIT = `
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <radialGradient id="df_b" cx="38%" cy="32%" r="68%">
+                    <stop offset="0%" stop-color="#ff6b8e"/>
+                    <stop offset="50%" stop-color="#d4052e"/>
+                    <stop offset="100%" stop-color="#7a0020"/>
+                </radialGradient>
+            </defs>
+            <path d="M50 22 C44 8 34 12 39 22" fill="#9e0020"/>
+            <path d="M50 22 C44 10 36 13 40 21 Z" fill="#2d8c1e"/>
+            <path d="M50 22 C56 8 66 12 61 22" fill="#9e0020"/>
+            <path d="M50 22 C56 10 64 13 60 21 Z" fill="#2d8c1e"/>
+            <path d="M18 52 C4 45 5 33 15 40" fill="#9e0020"/>
+            <path d="M18 52 C6 46 7 35 14 41 Z" fill="#2d8c1e"/>
+            <path d="M18 66 C4 64 5 76 15 69" fill="#9e0020"/>
+            <path d="M18 66 C6 64 7 74 14 69 Z" fill="#2d8c1e"/>
+            <path d="M82 52 C96 45 95 33 85 40" fill="#9e0020"/>
+            <path d="M82 52 C94 46 93 35 86 41 Z" fill="#2d8c1e"/>
+            <path d="M82 66 C96 64 95 76 85 69" fill="#9e0020"/>
+            <path d="M82 66 C94 64 93 74 86 69 Z" fill="#2d8c1e"/>
+            <path d="M50 90 C44 104 34 100 39 90" fill="#9e0020"/>
+            <path d="M50 90 C44 102 36 99 40 90 Z" fill="#2d8c1e"/>
+            <path d="M50 90 C56 104 66 100 61 90" fill="#9e0020"/>
+            <path d="M50 90 C56 102 64 99 60 90 Z" fill="#2d8c1e"/>
+            <ellipse cx="50" cy="56" rx="30" ry="34" fill="url(#df_b)"/>
+            <ellipse cx="39" cy="44" rx="10" ry="7" fill="rgba(255,255,255,0.28)" transform="rotate(-25 39 44)"/>
+        </svg>`;
+
         const SYMBOLS = [
+            { icon: SVG_DRAGONFRUIT, value: 'dragonfruit', weight: 2 },
             { icon: SVG_SEVEN, value: 'seven', weight: 4 },
             { icon: SVG_WATERMELON, value: 'watermelon', weight: 8 },
             { icon: SVG_GRAPE, value: 'grape', weight: 14 },
@@ -995,11 +1029,12 @@
         ];
 
         const PAYOUTS = {
-            seven:      [0, 0, 50,  250, 1250],
-            watermelon: [0, 0,  10,   50,  250],
-            grape:      [0, 0,   5,   25,  125],
-            orange:     [0, 0, 2.5, 12.5, 62.5],
-            cherry:     [0, 1, 1.25, 5.25, 26.25]
+            dragonfruit: [0, 0, 500, 2000, 5000],
+            seven:       [0, 0,  50,  250, 1250],
+            watermelon:  [0, 0,  10,   50,  250],
+            grape:       [0, 0,   5,   25,  125],
+            orange:      [0, 0,   3,   13,   63],
+            cherry:      [0, 1,   1,    5,   26]
         };
 
         const WIN_LINES = [
@@ -1052,7 +1087,7 @@
                     addSymbolToReel(i, symbol, false);
                 }
             }
-            [['pay-seven',SVG_SEVEN],['pay-melon',SVG_WATERMELON],['pay-grape',SVG_GRAPE],['pay-orange',SVG_ORANGE],['pay-cherry',SVG_CHERRY]]
+            [['pay-dragonfruit',SVG_DRAGONFRUIT],['pay-seven',SVG_SEVEN],['pay-melon',SVG_WATERMELON],['pay-grape',SVG_GRAPE],['pay-orange',SVG_ORANGE],['pay-cherry',SVG_CHERRY]]
                 .forEach(([id, svg]) => document.getElementById(id).innerHTML = svg);
             updateUI();
         }
@@ -1243,20 +1278,33 @@
             const wins = [];
             WIN_LINES.forEach((line) => {
                 const symsInLine = line.map((row, reel) => reelData[reel][row + 1].value);
-                let ltrCount = 1, ltrSym = symsInLine[0];
-                for(let i = 1; i < 5; i++) { if (symsInLine[i] === ltrSym) ltrCount++; else break; }
+                let ltrSym = null, ltrCount = 0;
+                for (let i = 0; i < 5; i++) {
+                    const s = symsInLine[i];
+                    if (s === 'dragonfruit') { ltrCount++; }
+                    else if (ltrSym === null) { ltrSym = s; ltrCount++; }
+                    else if (s === ltrSym) { ltrCount++; }
+                    else break;
+                }
+                if (ltrSym === null) ltrSym = 'dragonfruit';
                 const ltrPayout = (PAYOUTS[ltrSym] && PAYOUTS[ltrSym][ltrCount - 1]) || 0;
-                let rtlCount = 1, rtlSym = symsInLine[4];
-                for(let i = 3; i >= 0; i--) { if (symsInLine[i] === rtlSym) rtlCount++; else break; }
+                let rtlSym = null, rtlCount = 0;
+                for (let i = 4; i >= 0; i--) {
+                    const s = symsInLine[i];
+                    if (s === 'dragonfruit') { rtlCount++; }
+                    else if (rtlSym === null) { rtlSym = s; rtlCount++; }
+                    else if (s === rtlSym) { rtlCount++; }
+                    else break;
+                }
+                if (rtlSym === null) rtlSym = 'dragonfruit';
                 const rtlPayout = (PAYOUTS[rtlSym] && PAYOUTS[rtlSym][rtlCount - 1]) || 0;
-                // Award only the higher of LTR or RTL to prevent double-counting overlapping wins
                 const overlaps = ltrSym === rtlSym && ltrCount + rtlCount > 5;
                 if (overlaps) {
-                    if (ltrPayout >= rtlPayout && ltrPayout > 0) { totalWin += Math.round(ltrPayout); wins.push({line, count: ltrCount, side: 'left'}); }
-                    else if (rtlPayout > 0) { totalWin += Math.round(rtlPayout); wins.push({line, count: rtlCount, side: 'right'}); }
+                    if (ltrPayout >= rtlPayout && ltrPayout > 0) { totalWin += ltrPayout; wins.push({line, count: ltrCount, side: 'left'}); }
+                    else if (rtlPayout > 0) { totalWin += rtlPayout; wins.push({line, count: rtlCount, side: 'right'}); }
                 } else {
-                    if (ltrPayout > 0) { totalWin += Math.round(ltrPayout); wins.push({line, count: ltrCount, side: 'left'}); }
-                    if (rtlPayout > 0) { totalWin += Math.round(rtlPayout); wins.push({line, count: rtlCount, side: 'right'}); }
+                    if (ltrPayout > 0) { totalWin += ltrPayout; wins.push({line, count: ltrCount, side: 'left'}); }
+                    if (rtlPayout > 0) { totalWin += rtlPayout; wins.push({line, count: rtlCount, side: 'right'}); }
                 }
             });
             if (totalWin > 0) { score += totalWin; (totalWin >= 500 ? SFX.bigWin : SFX.win).call(SFX); showWins(wins, totalWin, isNudge); }
@@ -1418,6 +1466,12 @@
         }
 
         const PATCH_NOTES = [
+            { v:'v0.0.35', date:'2026-05', notes:[
+                'Added dragonfruit wild symbol — substitutes for any non-wild symbol on a win line',
+                'Fixed mobile layout — game fills viewport without scrolling',
+                'Fixed localStorage key — migrated to XFF prefix',
+                'Fixed float payouts — orange and cherry rounded to whole numbers',
+            ]},
             { v:'v0.0.34', date:'2026-05', notes:[
                 'Fixed double endGame call when timer expires during a spin (gameOver guard)',
                 'Fixed float scores — all payouts now stored and displayed as integers',
