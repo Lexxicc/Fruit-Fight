@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Fight v0.0.33</title>
+    <title>Fruit Fight v0.0.34</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&family=VT323&display=swap');
@@ -411,7 +411,7 @@
             </div>
             <div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:10px 16px;opacity:0.6;">
                 <div style="flex:1;height:1px;background:linear-gradient(to right,transparent,#fff);"></div>
-                <span style="font-size:13px;text-transform:uppercase;letter-spacing:0.3em;color:#fff;white-space:nowrap;font-family:'VT323',monospace;">Tacticon Studios 2026 &middot; v0.0.33</span>
+                <span style="font-size:13px;text-transform:uppercase;letter-spacing:0.3em;color:#fff;white-space:nowrap;font-family:'VT323',monospace;">Tacticon Studios 2026 &middot; v0.0.34</span>
                 <div style="flex:1;height:1px;background:linear-gradient(to left,transparent,#fff);"></div>
             </div>
         </div>
@@ -1012,6 +1012,7 @@
         let holdsLeft = 8;
         let isSpinning = false;
         let hasSpunOnce = false;
+        let gameOver = false;
         const MAX_TIMER_SECONDS = 180;
         let timerInterval = null;
         let timerSeconds = MAX_TIMER_SECONDS;
@@ -1020,7 +1021,7 @@
 
         function init() {
             score = 0; spinsLeft = 15; nudgesLeft = 8; holdsLeft = 8;
-            isSpinning = false; hasSpunOnce = false;
+            isSpinning = false; hasSpunOnce = false; gameOver = false;
             timerSeconds = MAX_TIMER_SECONDS;
             clearInterval(timerInterval);
             timerInterval = null;
@@ -1173,6 +1174,8 @@
                         timerInterval = null;
                         document.getElementById('timer-display').innerText = '0:00';
                         spinsLeft = 0;
+                        document.getElementById('spin-btn').disabled = true;
+                        updateUI();
                         if (!isSpinning) endGame();
                         return;
                     }
@@ -1208,6 +1211,8 @@
 
         function animateReel(reelIndex) {
             return new Promise(resolve => {
+                // Held reels must not spin or increment their spinCount
+                if (heldReels[reelIndex]) { resolve(); return; }
                 const strip = document.getElementById(`strip-${reelIndex}`);
                 const extra = 25 + (reelIndex * 5);
                 // Visual filler — unseeded, animation only
@@ -1247,11 +1252,11 @@
                 // Award only the higher of LTR or RTL to prevent double-counting overlapping wins
                 const overlaps = ltrSym === rtlSym && ltrCount + rtlCount > 5;
                 if (overlaps) {
-                    if (ltrPayout >= rtlPayout && ltrPayout > 0) { totalWin += ltrPayout; wins.push({line, count: ltrCount, side: 'left'}); }
-                    else if (rtlPayout > 0) { totalWin += rtlPayout; wins.push({line, count: rtlCount, side: 'right'}); }
+                    if (ltrPayout >= rtlPayout && ltrPayout > 0) { totalWin += Math.round(ltrPayout); wins.push({line, count: ltrCount, side: 'left'}); }
+                    else if (rtlPayout > 0) { totalWin += Math.round(rtlPayout); wins.push({line, count: rtlCount, side: 'right'}); }
                 } else {
-                    if (ltrPayout > 0) { totalWin += ltrPayout; wins.push({line, count: ltrCount, side: 'left'}); }
-                    if (rtlPayout > 0) { totalWin += rtlPayout; wins.push({line, count: rtlCount, side: 'right'}); }
+                    if (ltrPayout > 0) { totalWin += Math.round(ltrPayout); wins.push({line, count: ltrCount, side: 'left'}); }
+                    if (rtlPayout > 0) { totalWin += Math.round(rtlPayout); wins.push({line, count: rtlCount, side: 'right'}); }
                 }
             });
             if (totalWin > 0) { score += totalWin; (totalWin >= 500 ? SFX.bigWin : SFX.win).call(SFX); showWins(wins, totalWin, isNudge); }
@@ -1266,11 +1271,12 @@
         function showWins(wins, amount, isNudge) {
             document.getElementById('message-display').innerHTML = `<span class="text-[var(--teal-light)] font-bold">${isNudge ? 'NUDGE WIN' : 'WINNER'}</span> <span class="ml-2">+${amount}</span>`;
             const overlay = document.getElementById('win-overlay');
-            const grid = document.getElementById('reels-grid');
-            const rect = grid.getBoundingClientRect();
-            overlay.setAttribute("width", rect.width);
-            overlay.setAttribute("height", rect.height);
-            overlay.setAttribute("viewBox", `0 0 ${rect.width} ${rect.height}`);
+            // Use the overlay's own bounding rect as the coordinate origin so Y is
+            // always correct regardless of canvas size or orientation change.
+            const overlayRect = overlay.getBoundingClientRect();
+            overlay.setAttribute("width", overlayRect.width);
+            overlay.setAttribute("height", overlayRect.height);
+            overlay.setAttribute("viewBox", `0 0 ${overlayRect.width} ${overlayRect.height}`);
             const cs = getComputedStyle(document.documentElement);
             const symSize = parseInt(cs.getPropertyValue('--sym-size')) || 80;
             const peekSize = parseInt(cs.getPropertyValue('--peek-size')) || 40;
@@ -1283,8 +1289,8 @@
                     if (strip && strip.children.length === 5 && strip.children[rowIdx + 1]) strip.children[rowIdx + 1].classList.add('win-highlight');
                     const reelWindow = document.getElementById(`reel-${reelIdx}`);
                     const winRect = reelWindow.getBoundingClientRect();
-                    const x = (winRect.left - rect.left) + (winRect.width / 2);
-                    const y = (winRect.top - rect.top) + peekSize + (rowIdx * symSize) + (symSize / 2);
+                    const x = (winRect.left - overlayRect.left) + (winRect.width / 2);
+                    const y = (winRect.top - overlayRect.top) + peekSize + (rowIdx * symSize) + (symSize / 2);
                     points.push(`${x},${y}`);
                 }
                 const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -1295,6 +1301,8 @@
         }
 
         function endGame() {
+            if (gameOver) return;
+            gameOver = true;
             clearInterval(timerInterval);
             timerInterval = null;
             SFX.gameOver();
@@ -1410,6 +1418,14 @@
         }
 
         const PATCH_NOTES = [
+            { v:'v0.0.34', date:'2026-05', notes:[
+                'Fixed double endGame call when timer expires during a spin (gameOver guard)',
+                'Fixed float scores — all payouts now stored and displayed as integers',
+                'Fixed held reel spinCount guard — held reels explicitly skipped in animateReel',
+                'Fixed spin button remaining enabled after timer expires',
+                'Removed duplicate v0.0.31 patch note entry',
+                'Fixed win-line Y coordinate recalculated from overlay rect on every draw (resize-safe)',
+            ]},
             { v:'v0.0.33', date:'2026-05', notes:[
                 'Reverted to GG teal/navy colour scheme',
             ]},
@@ -1442,10 +1458,6 @@
                 'Watermelon redesigned as flat-top semicircle',
                 'Larger peek window — cherry vs grape now clearly distinct',
                 'Celebratory end screen with score animation',
-            ]},
-            { v:'v0.0.31', date:'2026-04', notes:[
-                'Fixed nudge animation travelling too far (moved 2 symbols instead of 1)',
-                'Added full Web Audio sound system — spin, reel stop, hold, nudge, win, game over',
             ]},
             { v:'v0.0.910', date:'2026-03', notes:['Fixed score display not updating after a nudge win'] },
             { v:'v0.0.909', date:'2026-03', notes:['Rebalanced cherry payouts (1/3/10/40 — down from 1/5/20/80)'] },
