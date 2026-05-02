@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Fight v0.0.907</title>
+    <title>Fruit Fight v0.0.908</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap');
@@ -401,6 +401,19 @@
                         <p class="text-[10px]">Lock reels for next spin. Costs 1 Hold.</p>
                     </div>
                 </div>
+                <div class="p-3 bg-black/20 rounded-xl border border-white/5 text-[10px] text-gray-400">
+                    <div class="text-teal-400 font-bold text-xs mb-1">v0.0.908</div>
+                    <ul class="space-y-0.5 list-disc list-inside">
+                        <li>Fixed double-counting when LTR and RTL wins overlap on same line</li>
+                        <li>Fixed win highlight indexing wrong symbol after nudge</li>
+                        <li>Fixed nudge-down animation truncated (now travels full symbol height)</li>
+                        <li>Fixed hold buttons permanently disabled when holdsLeft reaches 0</li>
+                        <li>Fixed crash when spinning before challenge is accepted</li>
+                        <li>Fixed challenge link using seed 0 if copied before game initialises</li>
+                        <li>Fixed nudge and hold actions firing through open modals</li>
+                        <li>Fixed spin action firing through open modals</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -493,7 +506,7 @@
     </div>
 
     <script>
-        (function(){ var _k='ff_wipe_v907'; if(localStorage.getItem(_k)!=='1'){ localStorage.removeItem('ff_stats'); localStorage.setItem(_k,'1'); } })();
+        (function(){ var _k='ff_wipe_v908'; if(localStorage.getItem(_k)!=='1'){ localStorage.removeItem('ff_stats'); localStorage.setItem(_k,'1'); } })();
 
         const FF_KEY = 'ff_stats';
 
@@ -797,12 +810,13 @@
             document.querySelectorAll('.nudge-btn').forEach(btn => btn.disabled = !hasSpunOnce || nudgesLeft <= 0 || isSpinning);
             document.querySelectorAll('.hold-btn').forEach((btn, idx) => {
                 const isAlreadyActive = heldReels[idx];
-                btn.disabled = !hasSpunOnce || isSpinning || (activeCount >= holdsLeft && !isAlreadyActive) || (holdsLeft <= 0 && !isAlreadyActive);
+                btn.disabled = !hasSpunOnce || isSpinning || (activeCount >= holdsLeft && holdsLeft > 0 && !isAlreadyActive) || (holdsLeft <= 0 && !isAlreadyActive);
             });
-            document.getElementById('spin-btn').disabled = isSpinning || spinsLeft <= 0;
+            document.getElementById('spin-btn').disabled = isSpinning || spinsLeft <= 0 || spinOutcomes.length === 0;
         }
 
         function toggleHold(reelIndex) {
+            if (isModalOpen()) return;
             if (!hasSpunOnce || isSpinning) return;
             const activeCount = heldReels.filter(h => h).length;
             if (!heldReels[reelIndex]) { if (activeCount < holdsLeft) heldReels[reelIndex] = true; } 
@@ -813,6 +827,7 @@
         }
 
         function nudge(reelIndex, direction) {
+            if (isModalOpen()) return;
             if (!hasSpunOnce || nudgesLeft <= 0 || isSpinning) return;
             nudgesLeft--;
             isSpinning = true;
@@ -823,7 +838,7 @@
             const symSize = parseInt(cs.getPropertyValue('--sym-size')) || 80;
             const peekSize = parseInt(cs.getPropertyValue('--peek-size')) || 40;
             strip.style.transition = 'transform 0.3s ease-out';
-            strip.style.transform = `translateY(${direction === 1 ? peekSize : -(peekSize + symSize * 2)}px)`;
+            strip.style.transform = `translateY(${direction === 1 ? symSize + peekSize : -(peekSize + symSize * 2)}px)`;
             setTimeout(() => {
                 strip.style.transition = 'none';
                 if (direction === 1) {
@@ -845,7 +860,7 @@
         }
 
         async function spin() {
-            if (isSpinning || spinsLeft <= 0) return;
+            if (isModalOpen() || isSpinning || spinsLeft <= 0 || spinOutcomes.length === 0) return;
             const holdCount = heldReels.filter(h => h).length;
             if (holdCount > holdsLeft) return;
             isSpinning = true;
@@ -919,8 +934,15 @@
                 let rtlCount = 1, rtlSym = symsInLine[4];
                 for(let i = 3; i >= 0; i--) { if (symsInLine[i] === rtlSym) rtlCount++; else break; }
                 const rtlPayout = (PAYOUTS[rtlSym] && PAYOUTS[rtlSym][rtlCount - 1]) || 0;
-                if (ltrPayout > 0) { totalWin += ltrPayout; wins.push({line, count: ltrCount, side: 'left'}); }
-                if (rtlPayout > 0) { totalWin += rtlPayout; wins.push({line, count: rtlCount, side: 'right'}); }
+                // Award only the higher of LTR or RTL to prevent double-counting overlapping wins
+                const overlaps = ltrSym === rtlSym && ltrCount + rtlCount > 5;
+                if (overlaps) {
+                    if (ltrPayout >= rtlPayout && ltrPayout > 0) { totalWin += ltrPayout; wins.push({line, count: ltrCount, side: 'left'}); }
+                    else if (rtlPayout > 0) { totalWin += rtlPayout; wins.push({line, count: rtlCount, side: 'right'}); }
+                } else {
+                    if (ltrPayout > 0) { totalWin += ltrPayout; wins.push({line, count: ltrCount, side: 'left'}); }
+                    if (rtlPayout > 0) { totalWin += rtlPayout; wins.push({line, count: rtlCount, side: 'right'}); }
+                }
             });
             if (totalWin > 0) { score += totalWin; showWins(wins, totalWin, isNudge); }
             else document.getElementById('message-display').innerText = isNudge ? "NO WIN" : "TRY AGAIN";
@@ -948,7 +970,7 @@
                     const reelIdx = win.side === 'left' ? i : (4 - i);
                     const rowIdx = win.line[reelIdx];
                     const strip = document.getElementById(`strip-${reelIdx}`);
-                    if (strip && strip.children[rowIdx + 1]) strip.children[rowIdx + 1].classList.add('win-highlight');
+                    if (strip && strip.children.length === 5 && strip.children[rowIdx + 1]) strip.children[rowIdx + 1].classList.add('win-highlight');
                     const reelWindow = document.getElementById(`reel-${reelIdx}`);
                     const winRect = reelWindow.getBoundingClientRect();
                     const x = (winRect.left - rect.left) + (winRect.width / 2);
@@ -983,6 +1005,7 @@
         }
 
         function copyChallenge() {
+            if (!matchSeed) return;
             const payload = btoa(JSON.stringify({ seed: matchSeed, score, ts: Date.now() }));
             const url = `${location.origin}${location.pathname}#m=${payload}`;
             navigator.clipboard.writeText(url).then(() => {
