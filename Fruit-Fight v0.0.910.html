@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Fight v0.0.909</title>
+    <title>Fruit Fight v0.0.910</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap');
@@ -402,6 +402,12 @@
                     </div>
                 </div>
                 <div class="p-3 bg-black/20 rounded-xl border border-white/5 text-[10px] text-gray-400">
+                    <div class="text-teal-400 font-bold text-xs mb-1">v0.0.910</div>
+                    <ul class="space-y-0.5 list-disc list-inside">
+                        <li>Fixed score display not updating after a nudge win</li>
+                    </ul>
+                </div>
+                <div class="p-3 bg-black/20 rounded-xl border border-white/5 text-[10px] text-gray-400">
                     <div class="text-teal-400 font-bold text-xs mb-1">v0.0.909</div>
                     <ul class="space-y-0.5 list-disc list-inside">
                         <li>Rebalanced cherry payouts (1/3/10/40 — down from 1/5/20/80)</li>
@@ -512,7 +518,7 @@
     </div>
 
     <script>
-        (function(){ var _k='ff_wipe_v909'; if(localStorage.getItem(_k)!=='1'){ localStorage.removeItem('ff_stats'); localStorage.setItem(_k,'1'); } })();
+        (function(){ var _k='ff_wipe_v910'; if(localStorage.getItem(_k)!=='1'){ localStorage.removeItem('ff_stats'); localStorage.setItem(_k,'1'); } })();
 
         const FF_KEY = 'ff_stats';
 
@@ -860,8 +866,8 @@
                 strip.offsetHeight;
                 strip.style.transition = 'transform 0.3s ease-out';
                 isSpinning = false;
-                updateUI();
                 calculateWins(true);
+                updateUI();
             }, 320);
         }
 
