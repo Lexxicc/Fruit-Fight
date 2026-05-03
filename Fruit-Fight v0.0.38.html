@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Fight v0.0.37</title>
+    <title>Fruit Fight v0.0.38</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&family=VT323&display=swap');
@@ -566,7 +566,7 @@
             </div>
             <div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:10px 16px;opacity:0.6;">
                 <div style="flex:1;height:1px;background:linear-gradient(to right,transparent,#fff);"></div>
-                <span style="font-size:13px;text-transform:uppercase;letter-spacing:0.3em;color:#fff;white-space:nowrap;font-family:'VT323',monospace;">Tacticon Studios 2026 &middot; v0.0.37</span>
+                <span style="font-size:13px;text-transform:uppercase;letter-spacing:0.3em;color:#fff;white-space:nowrap;font-family:'VT323',monospace;">Tacticon Studios 2026 &middot; v0.0.38</span>
                 <div style="flex:1;height:1px;background:linear-gradient(to left,transparent,#fff);"></div>
             </div>
         </div>
@@ -800,10 +800,6 @@
                 <div class="grid grid-cols-5 font-bold text-teal-400/50 text-[10px] uppercase border-b border-white/10 pb-1">
                     <div>Fruit</div><div>2x</div><div>3x</div><div>4x</div><div>5x</div>
                 </div>
-                <div class="grid grid-cols-5 font-bold text-white text-xs items-center">
-                    <div id="pay-dragonfruit" style="color:#ff6b8e;"></div><div class="text-teal-400/30">—</div><div style="color:#ff6b8e">500</div><div style="color:#ff6b8e">2000</div><div class="text-lg" style="color:#ff6b8e">5000</div>
-                </div>
-                <div class="text-[8px] tracking-widest" style="color:#ff6b8e;opacity:0.7;">★ WILD — substitutes for any fruit</div>
                 <div class="grid grid-cols-5 font-bold text-white text-xs items-center">
                     <div id="pay-seven" class="text-yellow-500"></div><div class="text-teal-400/30">—</div><div>50</div><div>250</div><div class="text-lg text-yellow-400">1250</div>
                 </div>
@@ -1175,7 +1171,7 @@
         </svg>`;
 
         const SYMBOLS = [
-            { icon: SVG_DRAGONFRUIT, value: 'dragonfruit', weight: 2 },
+            // SVG_DRAGONFRUIT kept in code but removed from active play
             { icon: SVG_SEVEN, value: 'seven', weight: 4 },
             { icon: SVG_WATERMELON, value: 'watermelon', weight: 8 },
             { icon: SVG_GRAPE, value: 'grape', weight: 14 },
@@ -1242,7 +1238,7 @@
                     addSymbolToReel(i, symbol, false);
                 }
             }
-            [['pay-dragonfruit',SVG_DRAGONFRUIT],['pay-seven',SVG_SEVEN],['pay-melon',SVG_WATERMELON],['pay-grape',SVG_GRAPE],['pay-orange',SVG_ORANGE],['pay-cherry',SVG_CHERRY]]
+            [['pay-seven',SVG_SEVEN],['pay-melon',SVG_WATERMELON],['pay-grape',SVG_GRAPE],['pay-orange',SVG_ORANGE],['pay-cherry',SVG_CHERRY]]
                 .forEach(([id, svg]) => document.getElementById(id).innerHTML = svg);
             updateUI();
         }
@@ -1437,22 +1433,18 @@
                 let ltrSym = null, ltrCount = 0;
                 for (let i = 0; i < 5; i++) {
                     const s = symsInLine[i];
-                    if (s === 'dragonfruit') { ltrCount++; }
-                    else if (ltrSym === null) { ltrSym = s; ltrCount++; }
+                    if (ltrSym === null) { ltrSym = s; ltrCount++; }
                     else if (s === ltrSym) { ltrCount++; }
                     else break;
                 }
-                if (ltrSym === null) ltrSym = 'dragonfruit';
                 const ltrPayout = (PAYOUTS[ltrSym] && PAYOUTS[ltrSym][ltrCount - 1]) || 0;
                 let rtlSym = null, rtlCount = 0;
                 for (let i = 4; i >= 0; i--) {
                     const s = symsInLine[i];
-                    if (s === 'dragonfruit') { rtlCount++; }
-                    else if (rtlSym === null) { rtlSym = s; rtlCount++; }
+                    if (rtlSym === null) { rtlSym = s; rtlCount++; }
                     else if (s === rtlSym) { rtlCount++; }
                     else break;
                 }
-                if (rtlSym === null) rtlSym = 'dragonfruit';
                 const rtlPayout = (PAYOUTS[rtlSym] && PAYOUTS[rtlSym][rtlCount - 1]) || 0;
                 const overlaps = ltrSym === rtlSym && ltrCount + rtlCount > 5;
                 if (overlaps) {
@@ -1622,6 +1614,9 @@
         }
 
         const PATCH_NOTES = [
+            { v:'v0.0.38', date:'2026-05', notes:[
+                'Removed dragonfruit wild from active play (code retained)',
+            ]},
             { v:'v0.0.37', date:'2026-05', notes:[
                 'Added SVG logo to front page — reel strip with all 6 fruit symbols and animated title',
             ]},
